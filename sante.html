@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LE TROPICAL — Centre de Santé</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="../CSS/sante.css"/>
+  <script src="../JS/sante.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     ÉCRAN DE CONNEXION
+══════════════════════════════════════ -->
+<div id="loginScreen" class="login-screen">
+
+  <div class="login-left">
+    <div class="login-brand">
+      <div class="brand-leaf" style="background:#fff !important;border:none !important;padding:4px">
+        <img src="../image/logo.png" alt="LE TROPICAL"
+             style="width:42px;height:42px;object-fit:contain;display:block"
+             onerror="this.style.display='none';this.parentNode.innerHTML='<i class=\'fa-solid fa-leaf\' style=\'color:#0d6b4f;font-size:22px\'></i>'"/>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">LE TROPICAL</span>
+        <span class="brand-sub">Centre de Santé</span>
+      </div>
+    </div>
+    <div class="login-hero">
+      <h1 class="hero-title">Votre santé,<br/><em>notre priorité.</em></h1>
+      <p class="hero-desc">Plateforme médicale intelligente multi-centres. Gérez patients, médecins, pharmacie et finances en un seul espace sécurisé.</p>
+    </div>
+    <div class="login-stats">
+      <div class="ls"><strong>1 200+</strong><span>Patients</span></div>
+      <div class="ls"><strong>24</strong><span>Médecins</span></div>
+      <div class="ls"><strong>3</strong><span>Centres</span></div>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-card">
+      <div class="lc-header" style="display:flex;align-items:center;gap:16px;padding:24px 36px 20px">
+        <img src="../image/logo.png" alt="LE TROPICAL" 
+             style="width:48px;height:48px;object-fit:contain;display:block;flex-shrink:0"
+             onerror="this.style.display='none'"/>
+        <div>
+          <h2 style="font-family:'DM Serif Display',serif;font-size:22px;margin:0 0 2px;color:var(--primary)">LE TROPICAL</h2>
+          <p style="color:var(--text-muted);margin:0;font-size:13px">Choisissez un compte pour vous connecter</p>
+        </div>
+      </div>
+      <div class="lc-body">
+
+        <!-- ── DEMO ACCOUNTS ── -->
+        <p style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted,#888);margin-bottom:10px">
+          <i class="fa fa-bolt" style="margin-right:5px;color:#f39c12"></i>Comptes de démonstration
+        </p>
+        <div id="demoAccounts" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+          <!-- rendered by JS -->
+        </div>
+
+        <!-- ── FORM ── -->
+        <div class="field-group mb-3">
+          <label>Adresse email</label>
+          <div class="field-wrap">
+            <i class="fa fa-envelope"></i>
+            <input type="email" id="loginEmail" placeholder="vous@letropical.sn" autocomplete="email"/>
+          </div>
+        </div>
+        <div class="field-group mb-4">
+          <label>Mot de passe</label>
+          <div class="field-wrap">
+            <i class="fa fa-lock"></i>
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"/>
+            <button class="pwd-toggle" onclick="togglePwd(this)" type="button" tabindex="-1">
+              <i class="fa fa-eye"></i>
+            </button>
+          </div>
+        </div>
+        <input type="hidden" id="loginRole" value="admin"/>
+
+        <button class="btn-login" onclick="doLogin()" type="button">
+          <span>Se connecter</span>
+          <i class="fa fa-arrow-right"></i>
+        </button>
+
+        <p class="demo-hint" style="margin-top:14px">
+          <i class="fa fa-info-circle"></i>
+          Cliquez sur un compte ci-dessus pour remplir automatiquement les champs.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /loginScreen -->
+
+
+<!-- ══════════════════════════════════════
+     APPLICATION PRINCIPALE
+══════════════════════════════════════ -->
+<div id="appShell" class="app-shell d-none">
+
+  <!-- ── SIDEBAR ── -->
+  <aside id="sidebar" class="sidebar">
+
+    <div class="sb-head">
+      <div class="sb-brand">
+        <div class="sb-leaf" style="background:#fff !important;border:none !important;padding:3px">
+          <img src="../image/logo.png" alt="logo"
+               style="width:28px;height:28px;object-fit:contain;display:block"
+               onerror="this.style.display='none';this.parentNode.innerHTML='<i class=\'fa-solid fa-leaf\' style=\'color:#0d6b4f;font-size:16px\'></i>'"/>
+        </div>
+        <span class="sb-title">LE TROPICAL</span>
+      </div>
+      <button class="sb-collapse" id="btnCollapse" onclick="toggleSidebar()" title="Réduire / Agrandir">
+        <i class="fa fa-chevron-left" id="collapseIcon"></i>
+      </button>
+    </div>
+
+    <div class="sb-profile">
+      <div class="sb-avatar" id="sbAvatar">A</div>
+      <div class="sb-user-info">
+        <span class="sb-username" id="sbUsername">Utilisateur</span>
+        <span class="sb-role"    id="sbRole">Rôle</span>
+      </div>
+    </div>
+
+    <nav class="sb-nav" id="sbNav"></nav>
+
+    <div class="sb-footer">
+      <button class="sb-logout" onclick="doLogout()" type="button">
+        <i class="fa fa-right-from-bracket"></i>
+        <span class="sb-label">Déconnexion</span>
+      </button>
+    </div>
+
+  </aside><!-- /sidebar -->
+
+  <!-- ── OVERLAY MOBILE ── -->
+  <div class="sb-overlay" id="sbOverlay" onclick="closeMobileSidebar()"></div>
+
+  <!-- ── CONTENU PRINCIPAL ── -->
+  <div class="app-main" id="appMain">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="tb-menu-btn" id="btnMobileMenu" onclick="openMobileSidebar()" type="button" aria-label="Menu">
+          <i class="fa fa-bars"></i>
+        </button>
+        <div class="tb-search" id="tbSearch">
+          <i class="fa fa-magnifying-glass"></i>
+          <input type="text" placeholder="Rechercher patient, médecin, médicament…"
+                 id="globalSearch" autocomplete="off" aria-label="Recherche globale"/>
+          <div class="search-results" id="searchResults"></div>
+        </div>
+      </div>
+
+      <div class="tb-right">
+        <button class="tb-btn" id="btnNotif" onclick="toggleNotifPanel()" title="Notifications" type="button" aria-label="Notifications">
+          <i class="fa fa-bell"></i>
+          <span class="tb-badge" id="notifCount">0</span>
+        </button>
+
+        <button class="tb-btn" onclick="navigateTo('messagerie')" title="Messagerie" type="button" aria-label="Messagerie">
+          <i class="fa fa-envelope"></i>
+        </button>
+
+        <div class="tb-divider"></div>
+
+        <div class="tb-user" onclick="navigateTo('profil')" role="button" tabindex="0"
+             onkeydown="if(event.key==='Enter')navigateTo('profil')" title="Mon profil">
+          <div class="tb-avatar" id="tbAvatar">U</div>
+          <div class="tb-user-info">
+            <span id="tbName">Utilisateur</span>
+            <small id="tbRole">Rôle</small>
+          </div>
+          <i class="fa fa-chevron-down tb-chevron"></i>
+        </div>
+      </div>
+    </header><!-- /topbar -->
+
+    <!-- PAGE -->
+    <main class="page-area" id="pageArea" role="main">
+      <!-- Contenu injecté dynamiquement par JavaScript -->
+    </main>
+
+  </div><!-- /app-main -->
+
+</div><!-- /appShell -->
+
+
+<!-- ══════════════════════════════════════
+     PANNEAU NOTIFICATIONS
+══════════════════════════════════════ -->
+<aside class="notif-panel d-none" id="notifPanel" role="region" aria-label="Notifications">
+  <div class="notif-panel-head">
+    <span>Notifications</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="np-btn" onclick="markAllRead()" type="button">Tout lire</button>
+      <button class="np-close" onclick="toggleNotifPanel()" type="button" aria-label="Fermer">
+        <i class="fa fa-xmark"></i>
+      </button>
+    </div>
+  </div>
+  <div class="notif-panel-list" id="notifPanelList">
+    <!-- Rempli dynamiquement -->
+  </div>
+</aside>
+
+
+<!-- ══════════════════════════════════════
+     MODAL GÉNÉRIQUE
+══════════════════════════════════════ -->
+<div class="modal fade" id="mainModal" tabindex="-1" aria-hidden="true" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content trop-modal">
+      <div class="modal-header trop-modal-header">
+        <h5 class="modal-title" id="modalTitle">—</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body trop-modal-body" id="modalBody">
+        <!-- Corps injecté dynamiquement -->
+      </div>
+      <div class="modal-footer trop-modal-footer" id="modalFooter">
+        <!-- Footer injecté dynamiquement -->
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     ZONE TOASTS
+══════════════════════════════════════ -->
+<div id="toastZone" class="toast-zone" role="status" aria-live="polite" aria-atomic="true"></div>
+
+
+<!-- ══════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
