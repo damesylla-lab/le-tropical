@@ -62,10 +62,10 @@ function initData() {
     { id: 2, nom: 'Rokhaya Cissé', email: 'cisse@letropical.sn', pwd: 'pharma123', tel: '+221 77 300 0002', centre: 2, actif: true }
   ];
   APP.patients = [
-    { id: 1, nom: 'Seydou Konaté', email: 'skonaté@email.com', tel: '+221 77 400 0001', ddn: '1985-03-12', sexe: 'M', adresse: 'Dakar, Médina', num: 'PAT-001' },
-    { id: 2, nom: 'Aïcha Traoré', email: 'atraore@email.com', tel: '+221 77 400 0002', ddn: '1992-07-25', sexe: 'F', adresse: 'Dakar, Plateau', num: 'PAT-002' },
-    { id: 3, nom: 'Mamadou Diallo', email: 'mdiallo@email.com', tel: '+221 77 400 0003', ddn: '1978-11-05', sexe: 'M', adresse: 'Thiès', num: 'PAT-003' },
-    { id: 4, nom: 'Bintou Camara', email: 'bcamara@email.com', tel: '+221 77 400 0004', ddn: '2001-01-18', sexe: 'F', adresse: 'Ziguinchor', num: 'PAT-004' }
+    { id: 1, nom: 'Seydou Konaté', email: 'skonate@email.com', pwd: 'patient123', tel: '+221 77 400 0001', ddn: '1985-03-12', sexe: 'M', adresse: 'Dakar, Médina', num: 'PAT-001' },
+    { id: 2, nom: 'Aïcha Traoré', email: 'atraore@email.com', pwd: 'patient123', tel: '+221 77 400 0002', ddn: '1992-07-25', sexe: 'F', adresse: 'Dakar, Plateau', num: 'PAT-002' },
+    { id: 3, nom: 'Mamadou Diallo', email: 'mdiallo@email.com', pwd: 'patient123', tel: '+221 77 400 0003', ddn: '1978-11-05', sexe: 'M', adresse: 'Thiès', num: 'PAT-003' },
+    { id: 4, nom: 'Bintou Camara', email: 'bcamara@email.com', pwd: 'patient123', tel: '+221 77 400 0004', ddn: '2001-01-18', sexe: 'F', adresse: 'Ziguinchor', num: 'PAT-004' }
   ];
   APP.medicaments = [
     { id: 1, nom: 'Paracétamol 500mg',    categorie: 'Analgésique',       stock: 450, stockMin: 50,  prix: 200,  peremption: '2027-08-31', fournisseur: 'PharmaSen'  },
@@ -89,16 +89,24 @@ function initData() {
     { id: 1, patientId: 1, medecinId: 1, date: '2026-06-01', medicaments: [{nom:'Paracétamol 500mg', posologie:'1 cp 3x/jour', duree:'5 jours'}], notes: 'Repos recommandé' },
     { id: 2, patientId: 2, medecinId: 2, date: '2026-05-28', medicaments: [{nom:'Amoxicilline 500mg', posologie:'1 cp 2x/jour', duree:'7 jours'}], notes: '' }
   ];
+  /* ── Sessions de téléconsultation en direct ──
+     statut: 'attente_patient' | 'en_cours' | 'terminee'
+     Une session est créée quand le médecin clique sur "Démarrer la session" pour un RDV de type teleconsult. */
+  APP.liveSessions = [];
+  APP._liveSessionSeq = 1;
   APP.queue = {
     attente: [
-      { id: 1, patientId: 1, heure: '08:45', motif: 'Consultation' },
-      { id: 2, patientId: 3, heure: '09:10', motif: 'Renouvellement ordonnance' }
+      { id: 1, patientId: 1, heure: '08:45', motif: 'Consultation', service: '', serviceId: null, medecin: '' },
+      { id: 2, patientId: 3, heure: '09:10', motif: 'Renouvellement ordonnance', service: '', serviceId: null, medecin: '' }
+    ],
+    oriente: [
+      { id: 5, patientId: 4, heure: '08:20', motif: 'Douleurs abdominales', service: 'Médecine Générale', serviceId: 1, medecin: '' }
     ],
     encours: [
-      { id: 3, patientId: 2, heure: '09:00', motif: 'Fièvre' }
+      { id: 3, patientId: 2, heure: '09:00', motif: 'Fièvre', service: 'Pédiatrie', serviceId: 2, medecin: 'Dr. Fatou Ndiaye' }
     ],
     termine: [
-      { id: 4, patientId: 4, heure: '08:00', motif: 'Contrôle' }
+      { id: 4, patientId: 4, heure: '08:00', motif: 'Contrôle', service: 'Médecine Générale', serviceId: 1, medecin: 'Dr. Amadou Diallo' }
     ]
   };
   /* ── NOUVELLE MESSAGERIE (boîte mail interne) ──
@@ -128,6 +136,54 @@ function initData() {
       ts: Date.now()-1800000, read:false, deleted:false },
   ];
   APP._inboxIdSeq = 6;
+
+  /* ── FACTURATION (Agent d'accueil) ── */
+  APP.factures = [
+    {
+      id: 1, numero: 'FACT-2026-0001',
+      patientId: 1,
+      dateHeure: Date.now() - 86400000 * 3,
+      prestations: [
+        { libelle: 'Consultation générale', montant: 15000 },
+        { libelle: 'Analyse sanguine', montant: 25000 }
+      ],
+      montantTotal: 40000,
+      assurance: { actif: true, nom: 'IPM Sénégal', taux: 80 },
+      montantAssurance: 32000,
+      montantPatient: 8000,
+      modePaiement: 'wave',
+      reference: 'WV-294817',
+      statut: 'payee',
+      encaisseLe: Date.now() - 86400000 * 3 + 3600000,
+      encaissePar: 'Khadija Mbaye',
+      historique: [
+        { action: 'Facture créée', user: 'Khadija Mbaye', ts: Date.now() - 86400000*3 },
+        { action: 'Paiement encaissé — Wave', user: 'Khadija Mbaye', ts: Date.now() - 86400000*3 + 3600000 }
+      ]
+    },
+    {
+      id: 2, numero: 'FACT-2026-0002',
+      patientId: 2,
+      dateHeure: Date.now() - 86400000,
+      prestations: [
+        { libelle: 'Consultation pédiatrique', montant: 12000 }
+      ],
+      montantTotal: 12000,
+      assurance: { actif: false, nom: '', taux: 0 },
+      montantAssurance: 0,
+      montantPatient: 12000,
+      modePaiement: '',
+      reference: '',
+      statut: 'attente',
+      encaisseLe: null,
+      encaissePar: null,
+      historique: [
+        { action: 'Facture créée', user: 'Khadija Mbaye', ts: Date.now() - 86400000 }
+      ]
+    }
+  ];
+  APP._factureSeq = 3;
+
   initNotifications();
 }
 
@@ -270,17 +326,40 @@ function findUserAccount(role, email, pwd) {
   return null;
 }
 
+/* ── Recherche d'un utilisateur dans TOUS les rôles (utilisé en secours si le rôle sélectionné ne correspond pas) ── */
+function findUserAccountAnyRole(email, pwd) {
+  const roles = ['admin','medecin','secretaire','pharmacien','accueil','patient'];
+  for (const r of roles) {
+    const acc = findUserAccount(r, email, pwd);
+    if (acc) return { role: r, account: acc };
+  }
+  return null;
+}
+
 function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const pwd = document.getElementById('loginPassword').value;
-  const role = document.getElementById('loginRole').value;
+  let role = document.getElementById('loginRole').value;
   if (!email || !pwd) { showToast('Veuillez saisir vos identifiants.', 'warning'); return; }
 
   const roleLabels = { admin: 'Administrateur', accueil: "Agent d'Accueil", secretaire: 'Secrétaire', medecin: 'Médecin', pharmacien: 'Pharmacien', patient: 'Patient' };
 
-  const account = findUserAccount(role, email, pwd);
+  let account = findUserAccount(role, email, pwd);
+
+  // Si le rôle sélectionné ne correspond pas, on cherche automatiquement dans tous les rôles
+  // (évite l'échec de connexion si l'utilisateur a oublié de changer le rôle dans le menu)
   if (!account) {
-    showToast("Identifiants incorrects ou compte introuvable pour ce rôle.", 'error');
+    const found = findUserAccountAnyRole(email, pwd);
+    if (found) {
+      role = found.role;
+      account = found.account;
+      const roleSelect = document.getElementById('loginRole');
+      if (roleSelect) roleSelect.value = role;
+    }
+  }
+
+  if (!account) {
+    showToast("Email ou mot de passe incorrect.", 'error');
     return;
   }
 
@@ -374,6 +453,7 @@ const NAV_CONFIG = {
     { section: 'Principal', items: [
       { id: 'queue', icon: 'fa-list-ol', label: "File d'attente" },
       { id: 'patients', icon: 'fa-users', label: 'Patients' },
+      { id: 'facturation', icon: 'fa-file-invoice-dollar', label: 'Facturation' },
     ]},
     { section: 'Mon compte', items: [
       { id: 'messagerie', icon: 'fa-envelope', label: 'Messagerie' },
@@ -476,6 +556,7 @@ function navigateTo(page) {
     messagerie: () => renderMessagerie(role),
     parametres: renderParametres,
     queue: renderQueue,
+    facturation: renderFacturation,
     consultation: renderConsultation,
     'mes-patients': renderMesPatients,
     'ordonnances-pharm': renderOrdonnancesPharm,
@@ -595,7 +676,7 @@ function showToast(msg, type = 'info') {
 ═══════════════════════════════════ */
 let _bsModal = null;
 function openModal(title, body, footer = '') {
-  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalTitle').innerHTML = title;
   document.getElementById('modalBody').innerHTML = body;
   document.getElementById('modalFooter').innerHTML = footer || `<button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>`;
   if (!_bsModal) _bsModal = new bootstrap.Modal(document.getElementById('mainModal'));
@@ -964,12 +1045,55 @@ function renderRdvRows(list, role) {
     <td>${esc(r.service)}</td>
     <td><b>${fmt(r.date)}</b> à ${r.heure}</td>
     <td>${esc(r.motif)}</td>
-    <td><span class="badge ${r.statut==='confirme'?'badge-green':r.statut==='en_attente'?'badge-orange':'badge-red'}">${r.statut==='confirme'?'Confirmé':r.statut==='en_attente'?'En attente':'Annulé'}</span></td>
-    <td>
-      ${role !== 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="editRdv(${r.id})"><i class="fa fa-pen"></i></button>
-      <button class="btn btn-danger btn-sm" onclick="deleteRdv(${r.id})" style="margin-left:4px"><i class="fa fa-trash"></i></button>` : `<button class="btn btn-secondary btn-sm" onclick="editRdv(${r.id})"><i class="fa fa-eye"></i></button>`}
+    <td><span class="badge ${r.statut==='confirme'?'badge-green':r.statut==='en_attente'?'badge-orange':r.statut==='refuse'?'badge-red':'badge-red'}">${r.statut==='confirme'?'Confirmé':r.statut==='en_attente'?'En attente':r.statut==='refuse'?'Refusé':'Annulé'}</span></td>
+    <td style="white-space:nowrap">
+      ${role === 'secretaire' && r.statut === 'en_attente' ? `
+        <button class="btn btn-success btn-sm" onclick="validerRdv(${r.id})" title="Valider le rendez-vous"><i class="fa fa-check"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="refuserRdv(${r.id})" style="margin-left:4px" title="Refuser le rendez-vous"><i class="fa fa-xmark"></i></button>
+      ` : ''}
+      ${role !== 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="editRdv(${r.id})" style="margin-left:4px" title="Modifier"><i class="fa fa-pen"></i></button>
+      <button class="btn btn-danger btn-sm" onclick="deleteRdv(${r.id})" style="margin-left:4px" title="Supprimer"><i class="fa fa-trash"></i></button>` : `<button class="btn btn-secondary btn-sm" onclick="editRdv(${r.id})" style="margin-left:4px"><i class="fa fa-eye"></i></button>`}
     </td>
   </tr>`).join('');
+}
+
+/* ── Validation / refus d'un rendez-vous pris en ligne par le patient (secrétaire) ── */
+function validerRdv(id) {
+  if (!APP.currentUser || APP.currentUser.role !== 'secretaire') {
+    showToast("Seule la secrétaire peut valider un rendez-vous.", 'error');
+    return;
+  }
+  const r = APP.rendezVous.find(x => x.id === id);
+  if (!r) return;
+  r.statut = 'confirme';
+  showToast(`Rendez-vous de ${patientName(r.patientId)} confirmé.`, 'success');
+  renderRdv();
+}
+
+function refuserRdv(id) {
+  if (!APP.currentUser || APP.currentUser.role !== 'secretaire') {
+    showToast("Seule la secrétaire peut refuser un rendez-vous.", 'error');
+    return;
+  }
+  const r = APP.rendezVous.find(x => x.id === id);
+  if (!r) return;
+  openModal('Refuser le rendez-vous', `
+    <p>Refuser le rendez-vous de <strong>${esc(patientName(r.patientId))}</strong> le <strong>${fmt(r.date)} à ${r.heure}</strong> ?</p>
+    <div class="form-group" style="margin-top:10px"><label>Motif du refus (optionnel)</label>
+      <textarea class="form-control" id="refus_motif" rows="2" placeholder="Ex: créneau indisponible, merci de reprendre RDV…"></textarea>
+    </div>`,
+    `<button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+     <button class="btn btn-danger" onclick="confirmerRefusRdv(${id})"><i class="fa fa-xmark"></i> Confirmer le refus</button>`);
+}
+
+function confirmerRefusRdv(id) {
+  const r = APP.rendezVous.find(x => x.id === id);
+  if (!r) return;
+  r.statut = 'refuse';
+  r.motifRefus = document.getElementById('refus_motif')?.value.trim() || '';
+  closeModal();
+  showToast(`Rendez-vous de ${patientName(r.patientId)} refusé.`, 'success');
+  renderRdv();
 }
 
 function filterRdvLocal(q) {
@@ -986,7 +1110,7 @@ function filterRdvLocal(q) {
   document.getElementById('rdvTbody').innerHTML = renderRdvRows(list, role);
 }
 
-function openModalNewRdv() {
+function openModalNewRdv(presetPatientId, fromQueueId) {
   const role = APP.currentUser.role;
   let medecinField = '';
 
@@ -1014,8 +1138,13 @@ function openModalNewRdv() {
       </select></div>`;
   }
 
-  openModal('Nouveau rendez-vous', `
-    <div class="form-group"><label>Patient *</label><select class="form-control" id="rdv_patientId">${APP.patients.map(p=>`<option value="${p.id}">${esc(p.nom)}</option>`).join('')}</select></div>
+  const patientOptions = APP.patients.map(p => `<option value="${p.id}" ${presetPatientId && p.id===presetPatientId ? 'selected':''}>${esc(p.nom)}</option>`).join('');
+
+  openModal(presetPatientId ? `Prendre rendez-vous — ${esc(patientName(presetPatientId))}` : 'Nouveau rendez-vous', `
+    <input type="hidden" id="rdv_from_queue_id" value="${fromQueueId || ''}"/>
+    <div class="form-group"><label>Patient *</label><select class="form-control" id="rdv_patientId" ${presetPatientId ? 'disabled' : ''}>${patientOptions}</select>
+      ${presetPatientId ? `<input type="hidden" id="rdv_patientId_hidden" value="${presetPatientId}"/>` : ''}
+    </div>
     ${medecinField}
     <div class="form-row">
       <div class="form-group"><label>Date *</label><input class="form-control" id="rdv_date" type="date" min="${new Date().toISOString().split('T')[0]}" onchange="updateDisponibilites()"/></div>
@@ -1138,7 +1267,10 @@ function updateDisponibilites() {
 }
 
 function saveNewRdv() {
-  const patientId = parseInt(document.getElementById('rdv_patientId').value);
+  const patientSelect = document.getElementById('rdv_patientId');
+  const patientId = patientSelect.disabled
+    ? parseInt(document.getElementById('rdv_patientId_hidden').value)
+    : parseInt(patientSelect.value);
   const medecinId = parseInt(document.getElementById('rdv_medecinId').value);
   const date = document.getElementById('rdv_date').value;
   const heure = document.getElementById('rdv_heure').value;
@@ -1146,8 +1278,33 @@ function saveNewRdv() {
   // Check availability
   const clash = APP.rendezVous.some(r => r.medecinId===medecinId && r.date===date && r.heure===heure && r.statut!=='annule');
   if (clash) { showToast('Ce créneau est déjà occupé.', 'error'); return; }
-  APP.rendezVous.push({ id: genId(APP.rendezVous), patientId, medecinId, date, heure, service: document.getElementById('rdv_service').value, statut: 'en_attente', motif: document.getElementById('rdv_motif').value.trim() });
-  closeModal(); showToast('Rendez-vous créé.', 'success'); renderRdv();
+
+  APP.rendezVous.push({
+    id: genId(APP.rendezVous), patientId, medecinId, date, heure,
+    service: document.getElementById('rdv_service').value,
+    statut: 'confirme',
+    motif: document.getElementById('rdv_motif').value.trim(),
+    type: document.getElementById('rdv_type')?.value || 'physique'
+  });
+
+  // Si ce RDV provient de la file d'attente (patient orienté), on le retire de la file "oriente"
+  const fromQueueId = parseInt(document.getElementById('rdv_from_queue_id')?.value);
+  if (fromQueueId) {
+    const idx = APP.queue.oriente.findIndex(x => x.id === fromQueueId);
+    if (idx >= 0) {
+      const item = APP.queue.oriente.splice(idx, 1)[0];
+      item.medecin = medecinName(medecinId);
+      item.medecinId = medecinId;
+      APP.queue.encours.push(item);
+    }
+  }
+
+  closeModal(); showToast('Rendez-vous créé.', 'success');
+  if (document.getElementById('queueBoard')) {
+    document.getElementById('queueBoard').innerHTML = renderQueueColumns(APP.currentUser?.role, APP.currentUser?.serviceId);
+  } else {
+    renderRdv();
+  }
 }
 
 function editRdv(id) {
@@ -1157,6 +1314,7 @@ function editRdv(id) {
     <div class="form-group"><label>Statut</label><select class="form-control" id="erdv_statut">
       <option value="en_attente" ${r.statut==='en_attente'?'selected':''}>En attente</option>
       <option value="confirme" ${r.statut==='confirme'?'selected':''}>Confirmé</option>
+      <option value="refuse" ${r.statut==='refuse'?'selected':''}>Refusé</option>
       <option value="annule" ${r.statut==='annule'?'selected':''}>Annulé</option>
     </select></div>
     <div class="form-row">
@@ -2788,6 +2946,665 @@ function sendMsgToPatientQueue(patientId) {
   showToast('Message envoyé au patient.', 'success');
 }
 
+/* ═══════════════════════════════════════════════════════════
+   FACTURATION — Agent d'accueil uniquement
+═══════════════════════════════════════════════════════════ */
+
+const STATUT_FACTURE = {
+  attente:    { label: 'En attente',            color: '#f39c12', bg: '#fff3e0', badge: 'badge-orange' },
+  partielle:  { label: 'Partiellement payée',   color: '#3498db', bg: '#ebf5fb', badge: 'badge-blue'   },
+  payee:      { label: 'Payée',                 color: '#27ae60', bg: '#eafaf1', badge: 'badge-green'  },
+  annulee:    { label: 'Annulée',               color: '#c0392b', bg: '#fdedec', badge: 'badge-red'    },
+};
+
+const MODES_PAIEMENT = [
+  { value: 'especes',   label: 'Espèces',             icon: 'fa-money-bill-wave', needsRef: false },
+  { value: 'wave',      label: 'Wave',                icon: 'fa-mobile-screen',   needsRef: true  },
+  { value: 'orange',    label: 'Orange Money',        icon: 'fa-mobile-screen',   needsRef: true  },
+  { value: 'free',      label: 'Free Money',          icon: 'fa-mobile-screen',   needsRef: true  },
+  { value: 'carte',     label: 'Carte bancaire',      icon: 'fa-credit-card',     needsRef: true  },
+  { value: 'cheque',    label: 'Chèque',              icon: 'fa-money-check',     needsRef: true  },
+  { value: 'virement',  label: 'Virement bancaire',   icon: 'fa-building-columns',needsRef: true  },
+  { value: 'mixte',     label: 'Paiement mixte',      icon: 'fa-layer-group',     needsRef: true  },
+];
+
+const PRESTATIONS_CATALOGUE = [
+  { libelle: 'Consultation générale',     montant: 15000 },
+  { libelle: 'Consultation spécialisée',  montant: 25000 },
+  { libelle: 'Téléconsultation',          montant: 10000 },
+  { libelle: 'Analyse sanguine',          montant: 25000 },
+  { libelle: 'Analyse urinaire',          montant: 12000 },
+  { libelle: 'Radiographie',              montant: 35000 },
+  { libelle: 'Échographie',               montant: 45000 },
+  { libelle: 'Électrocardiogramme',       montant: 20000 },
+  { libelle: "Journée d'hospitalisation", montant: 50000 },
+  { libelle: 'Petite chirurgie',          montant: 80000 },
+  { libelle: 'Pansement / Soins',         montant: 5000  },
+  { libelle: 'Vaccination',               montant: 8000  },
+];
+
+function modePaiementInfo(value) { return MODES_PAIEMENT.find(m => m.value === value); }
+function statutInfo(value) { return STATUT_FACTURE[value] || STATUT_FACTURE.attente; }
+
+function logFactureHistorique(facture, action) {
+  facture.historique = facture.historique || [];
+  facture.historique.push({
+    action,
+    user: APP.currentUser ? APP.currentUser.name : 'Système',
+    ts: Date.now()
+  });
+}
+
+function genFactureNumero() {
+  const year = new Date().getFullYear();
+  const count = APP.factures.filter(f => f.numero.includes(String(year))).length + 1;
+  return `FACT-${year}-${String(count).padStart(4, '0')}`;
+}
+
+/* ── Filtres courants pour la liste ── */
+let _factFolder = 'toutes';
+let _factSearch = '';
+
+function renderFacturation() {
+  const area = document.getElementById('pageArea');
+  if (APP.currentUser.role !== 'accueil') {
+    area.innerHTML = `<div class="empty-state"><i class="fa fa-lock"></i><h3>Accès refusé</h3><p>Seul l'agent d'accueil peut accéder à la facturation.</p></div>`;
+    return;
+  }
+  _factFolder = 'toutes';
+  _factSearch = '';
+  area.innerHTML = `<div id="factRoot"></div>`;
+  paintFacturation();
+}
+
+function paintFacturation() {
+  const root = document.getElementById('factRoot');
+  if (!root) return;
+
+  const total = APP.factures.length;
+  const enAttente = APP.factures.filter(f => f.statut === 'attente').length;
+  const partielles = APP.factures.filter(f => f.statut === 'partielle').length;
+  const payees = APP.factures.filter(f => f.statut === 'payee').length;
+  const sommeEncaissee = APP.factures.filter(f => f.statut === 'payee').reduce((s,f) => s + f.montantTotal, 0)
+                       + APP.factures.filter(f => f.statut === 'partielle').reduce((s,f) => s + (f.montantEncaisseAcompte||0), 0);
+
+  root.innerHTML = `
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Facturation</h1>
+        <p class="page-subtitle">${total} facture${total>1?'s':''} · ${enAttente} en attente de paiement</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="openNewFactureForm()"><i class="fa fa-circle-plus"></i> Nouvelle facture</button>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom:22px">
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fa fa-file-invoice"></i></div>
+        <div class="stat-info"><div class="stat-value">${total}</div><div class="stat-label">Factures totales</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fa fa-hourglass-half"></i></div>
+        <div class="stat-info"><div class="stat-value">${enAttente}</div><div class="stat-label">En attente de paiement</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="fa fa-circle-half-stroke"></i></div>
+        <div class="stat-info"><div class="stat-value">${partielles}</div><div class="stat-label">Partiellement payées</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fa fa-circle-check"></i></div>
+        <div class="stat-info"><div class="stat-value">${payees}</div><div class="stat-label">Factures payées</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fa fa-sack-dollar"></i></div>
+        <div class="stat-info"><div class="stat-value" style="font-size:18px">${fmtMoney(sommeEncaissee)}</div><div class="stat-label">Total encaissé</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="flex-wrap:wrap;gap:10px">
+        <span class="card-title"><i class="fa fa-clock-rotate-left" style="margin-right:8px;color:var(--primary)"></i>Historique des factures</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="factFolderSelect" class="form-control sm" style="width:190px;padding:6px 10px;font-size:13px" onchange="switchFactFolder(this.value)">
+            <option value="toutes">Toutes les factures</option>
+            <option value="attente">En attente</option>
+            <option value="partielle">Partiellement payées</option>
+            <option value="payee">Payées</option>
+            <option value="annulee">Annulées</option>
+          </select>
+          <div class="page-search"><i class="fa fa-magnifying-glass"></i><input type="text" id="factSearchInput" placeholder="N° facture ou patient…" oninput="searchFactures(this.value)"/></div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="trop-table" id="tbl-factures">
+          <thead>
+            <tr>
+              <th>N° Facture</th><th>Patient</th><th>Date</th><th>Montant total</th>
+              <th>Assurance</th><th>À charge patient</th><th>Statut</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="factTbody">${renderFactureRows(getFilteredFactures())}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function getFilteredFactures() {
+  let list = [...APP.factures].sort((a,b) => b.dateHeure - a.dateHeure);
+  if (_factFolder !== 'toutes') list = list.filter(f => f.statut === _factFolder);
+  if (_factSearch) {
+    const lower = _factSearch.toLowerCase();
+    list = list.filter(f =>
+      f.numero.toLowerCase().includes(lower) ||
+      patientName(f.patientId).toLowerCase().includes(lower)
+    );
+  }
+  return list;
+}
+
+function switchFactFolder(val) { _factFolder = val; document.getElementById('factTbody').innerHTML = renderFactureRows(getFilteredFactures()); }
+function searchFactures(q) { _factSearch = q; document.getElementById('factTbody').innerHTML = renderFactureRows(getFilteredFactures()); }
+
+function renderFactureRows(list) {
+  if (list.length === 0) {
+    return `<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--text-muted)"><i class="fa fa-file-invoice" style="font-size:26px;display:block;margin-bottom:8px;opacity:.3"></i>Aucune facture trouvée</td></tr>`;
+  }
+  return list.map(f => {
+    const st = statutInfo(f.statut);
+    return `<tr>
+      <td><span style="font-weight:700;color:var(--primary)">${esc(f.numero)}</span></td>
+      <td>${esc(patientName(f.patientId))}</td>
+      <td>${new Date(f.dateHeure).toLocaleDateString('fr-FR')} <span style="color:var(--text-muted);font-size:11.5px">${new Date(f.dateHeure).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></td>
+      <td style="font-weight:600">${fmtMoney(f.montantTotal)}</td>
+      <td>${f.assurance.actif ? `<span class="badge badge-blue">${esc(f.assurance.nom)} · ${f.assurance.taux}%</span>` : '<span class="badge badge-gray">Aucune</span>'}</td>
+      <td style="font-weight:600;color:${f.montantPatient>0?'var(--danger)':'var(--success)'}">${fmtMoney(f.montantPatient)}</td>
+      <td><span class="badge ${st.badge}">${st.label}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="openFactureDetail(${f.id})" title="Voir / Gérer"><i class="fa fa-eye"></i></button>
+        ${(f.statut === 'payee' || f.statut === 'partielle') ? `<button class="btn btn-secondary btn-sm" style="margin-left:4px" onclick="printRecu(${f.id})" title="Imprimer le reçu"><i class="fa fa-print"></i></button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Formulaire nouvelle facture ── */
+let _newFactPrestations = [];
+
+function openNewFactureForm() {
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Seul l'agent d'accueil peut créer une facture.", 'error');
+    return;
+  }
+  _newFactPrestations = [];
+  openModal('Nouvelle facture', buildFactureFormHtml(), buildFactureFormFooter());
+  renderPrestationsList();
+  refreshFactureTotals();
+}
+
+function buildFactureFormHtml() {
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px">
+      <div class="form-group">
+        <label>Numéro de facture</label>
+        <input class="form-control" value="${genFactureNumero()}" disabled style="background:var(--green5);font-weight:700;color:var(--primary)"/>
+      </div>
+      <div class="form-group">
+        <label>Date et heure</label>
+        <input class="form-control" value="${new Date().toLocaleString('fr-FR')}" disabled style="background:var(--green5)"/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Patient concerné *</label>
+      <select class="form-control" id="fact_patient">
+        ${APP.patients.map(p => `<option value="${p.id}">${esc(p.nom)} — ${esc(p.num||'')}</option>`).join('')}
+      </select>
+    </div>
+
+    <!-- ═══ PRESTATIONS ═══ -->
+    <div style="margin-top:16px;padding-top:14px;border-top:1.5px solid var(--green4)">
+      <label style="font-weight:700;color:var(--primary);display:block;margin-bottom:8px"><i class="fa fa-list-check" style="margin-right:6px"></i>Prestations à facturer</label>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <select class="form-control sm" id="fact_prestation_select" style="flex:2">
+          ${PRESTATIONS_CATALOGUE.map((p,i) => `<option value="${i}">${esc(p.libelle)} — ${fmtMoney(p.montant)}</option>`).join('')}
+        </select>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addPrestationToFacture()"><i class="fa fa-plus"></i> Ajouter</button>
+      </div>
+      <div id="fact_prestations_list" style="margin-bottom:6px"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <input class="form-control sm" id="fact_custom_label" placeholder="Prestation personnalisée…" style="flex:2"/>
+        <input class="form-control sm" id="fact_custom_montant" type="number" min="0" placeholder="Montant FCFA" style="flex:1"/>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addCustomPrestation()"><i class="fa fa-plus"></i></button>
+      </div>
+    </div>
+
+    <!-- ═══ ASSURANCE ═══ -->
+    <div style="margin-top:18px;padding-top:14px;border-top:1.5px solid var(--green4)">
+      <label style="font-weight:700;color:var(--primary);display:block;margin-bottom:10px"><i class="fa fa-shield-heart" style="margin-right:6px"></i>Assurance maladie</label>
+      <div class="form-group" style="margin-bottom:10px">
+        <label style="font-size:12.5px">Le patient dispose-t-il d'une assurance ?</label>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1.5px solid var(--green4);border-radius:8px;flex:1" id="lbl_assur_non">
+            <input type="radio" name="fact_assurance" value="non" checked onchange="toggleAssuranceFields(false)" style="margin:0"/> Non
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1.5px solid var(--green4);border-radius:8px;flex:1" id="lbl_assur_oui">
+            <input type="radio" name="fact_assurance" value="oui" onchange="toggleAssuranceFields(true)" style="margin:0"/> Oui
+          </label>
+        </div>
+      </div>
+      <div id="fact_assurance_fields" style="display:none">
+        <div class="form-row">
+          <div class="form-group"><label>Nom de l'assurance</label><input class="form-control sm" id="fact_assur_nom" placeholder="Ex: IPM Sénégal"/></div>
+          <div class="form-group"><label>Taux de prise en charge (%)</label><input class="form-control sm" id="fact_assur_taux" type="number" min="0" max="100" placeholder="Ex: 80" oninput="refreshFactureTotals()"/></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RÉCAPITULATIF MONTANTS ═══ -->
+    <div style="margin-top:16px;background:var(--green5);border:1.5px solid var(--green4);border-radius:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px">
+        <span>Montant total</span><span id="fact_total_display" style="font-weight:700">0 FCFA</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px;color:#1d4ed8">
+        <span>Pris en charge par l'assurance</span><span id="fact_assur_display" style="font-weight:700">0 FCFA</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px dashed var(--green4);font-size:15px">
+        <span style="font-weight:700">À payer par le patient</span><span id="fact_patient_display" style="font-weight:800;color:var(--primary)">0 FCFA</span>
+      </div>
+    </div>
+
+    <!-- ═══ MODE DE PAIEMENT ═══ -->
+    <div style="margin-top:18px;padding-top:14px;border-top:1.5px solid var(--green4)">
+      <label style="font-weight:700;color:var(--primary);display:block;margin-bottom:8px"><i class="fa fa-credit-card" style="margin-right:6px"></i>Mode de paiement</label>
+      <select class="form-control" id="fact_mode_paiement" onchange="toggleRefField()">
+        <option value="">— Choisir un mode (à l'encaissement) —</option>
+        ${MODES_PAIEMENT.map(m => `<option value="${m.value}">${esc(m.label)}</option>`).join('')}
+      </select>
+      <div id="fact_ref_field" style="display:none;margin-top:10px">
+        <label style="font-size:12.5px">Référence de transaction</label>
+        <input class="form-control sm" id="fact_reference" placeholder="Ex: WV-294817"/>
+      </div>
+    </div>`;
+}
+
+function buildFactureFormFooter() {
+  return `
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+    <button class="btn btn-secondary" onclick="saveFacture('attente')"><i class="fa fa-floppy-disk"></i> Enregistrer la facture</button>
+    <button class="btn btn-primary" onclick="saveFacture('payee')"><i class="fa fa-cash-register"></i> Encaisser le patient</button>`;
+}
+
+function toggleAssuranceFields(show) {
+  document.getElementById('fact_assurance_fields').style.display = show ? 'block' : 'none';
+  document.getElementById('lbl_assur_oui').style.borderColor = show ? 'var(--primary)' : 'var(--green4)';
+  document.getElementById('lbl_assur_non').style.borderColor = !show ? 'var(--primary)' : 'var(--green4)';
+  refreshFactureTotals();
+}
+
+function toggleRefField() {
+  const mode = document.getElementById('fact_mode_paiement').value;
+  const info = modePaiementInfo(mode);
+  document.getElementById('fact_ref_field').style.display = (info && info.needsRef) ? 'block' : 'none';
+}
+
+function addPrestationToFacture() {
+  const idx = parseInt(document.getElementById('fact_prestation_select').value);
+  const p = PRESTATIONS_CATALOGUE[idx];
+  if (!p) return;
+  _newFactPrestations.push({ ...p });
+  renderPrestationsList();
+  refreshFactureTotals();
+}
+
+function addCustomPrestation() {
+  const label = document.getElementById('fact_custom_label').value.trim();
+  const montant = parseInt(document.getElementById('fact_custom_montant').value) || 0;
+  if (!label || montant <= 0) { showToast('Libellé et montant valide requis.', 'warning'); return; }
+  _newFactPrestations.push({ libelle: label, montant });
+  document.getElementById('fact_custom_label').value = '';
+  document.getElementById('fact_custom_montant').value = '';
+  renderPrestationsList();
+  refreshFactureTotals();
+}
+
+function removePrestationFromFacture(idx) {
+  _newFactPrestations.splice(idx, 1);
+  renderPrestationsList();
+  refreshFactureTotals();
+}
+
+function renderPrestationsList() {
+  const zone = document.getElementById('fact_prestations_list');
+  if (!zone) return;
+  if (_newFactPrestations.length === 0) {
+    zone.innerHTML = `<div style="font-size:12px;color:var(--text-muted);padding:8px 0">Aucune prestation ajoutée.</div>`;
+    return;
+  }
+  zone.innerHTML = _newFactPrestations.map((p,i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--green5);border-radius:7px;margin-bottom:5px;font-size:13px">
+      <span>${esc(p.libelle)}</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-weight:700">${fmtMoney(p.montant)}</span>
+        <button type="button" onclick="removePrestationFromFacture(${i})" style="background:none;border:none;color:var(--danger);cursor:pointer"><i class="fa fa-xmark"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function refreshFactureTotals() {
+  const total = _newFactPrestations.reduce((s,p) => s + p.montant, 0);
+  const isInsured = document.querySelector('input[name="fact_assurance"]:checked')?.value === 'oui';
+  const taux = isInsured ? (parseFloat(document.getElementById('fact_assur_taux')?.value) || 0) : 0;
+  const montantAssurance = Math.round(total * taux / 100);
+  const montantPatient = total - montantAssurance;
+
+  const totalEl = document.getElementById('fact_total_display');
+  const assurEl = document.getElementById('fact_assur_display');
+  const patEl   = document.getElementById('fact_patient_display');
+  if (totalEl) totalEl.textContent = fmtMoney(total);
+  if (assurEl) assurEl.textContent = fmtMoney(montantAssurance);
+  if (patEl)   patEl.textContent   = fmtMoney(montantPatient);
+}
+
+function saveFacture(statutVoulu) {
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Action non autorisée pour ce rôle.", 'error');
+    return;
+  }
+  if (_newFactPrestations.length === 0) { showToast('Ajoutez au moins une prestation.', 'warning'); return; }
+  const patientId = parseInt(document.getElementById('fact_patient').value);
+  const isInsured = document.querySelector('input[name="fact_assurance"]:checked')?.value === 'oui';
+  const assurNom = isInsured ? document.getElementById('fact_assur_nom').value.trim() : '';
+  const taux = isInsured ? (parseFloat(document.getElementById('fact_assur_taux').value) || 0) : 0;
+  const total = _newFactPrestations.reduce((s,p) => s + p.montant, 0);
+  const montantAssurance = Math.round(total * taux / 100);
+  const montantPatient = total - montantAssurance;
+  const modePaiement = document.getElementById('fact_mode_paiement').value;
+  const reference = document.getElementById('fact_reference')?.value.trim() || '';
+
+  if (statutVoulu === 'payee') {
+    if (!modePaiement) { showToast('Sélectionnez un mode de paiement pour encaisser.', 'warning'); return; }
+    const info = modePaiementInfo(modePaiement);
+    if (info && info.needsRef && !reference) { showToast('Une référence de transaction est requise pour ce mode de paiement.', 'warning'); return; }
+  }
+
+  const facture = {
+    id: genId(APP.factures),
+    numero: genFactureNumero(),
+    patientId,
+    dateHeure: Date.now(),
+    prestations: [..._newFactPrestations],
+    montantTotal: total,
+    assurance: { actif: isInsured, nom: assurNom, taux },
+    montantAssurance,
+    montantPatient,
+    modePaiement: statutVoulu === 'payee' ? modePaiement : '',
+    reference: statutVoulu === 'payee' ? reference : '',
+    statut: statutVoulu,
+    encaisseLe: statutVoulu === 'payee' ? Date.now() : null,
+    encaissePar: statutVoulu === 'payee' ? APP.currentUser.name : null,
+    historique: []
+  };
+  logFactureHistorique(facture, statutVoulu === 'payee' ? 'Facture créée et encaissée' : 'Facture créée');
+  APP.factures.push(facture);
+
+  closeModal();
+  if (statutVoulu === 'payee') {
+    showToast(`Paiement encaissé — ${facture.numero}`, 'success');
+    addNotification({ type:'facture', title:'Paiement encaissé', desc:`${facture.numero} — ${fmtMoney(facture.montantTotal)}`, time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), icon:'fa-cash-register', color:'#27ae60' });
+  } else {
+    showToast(`Facture enregistrée — ${facture.numero}`, 'success');
+  }
+  paintFacturation();
+}
+
+/* ── Détail / gestion d'une facture existante ── */
+function openFactureDetail(id) {
+  const f = APP.factures.find(x => x.id === id);
+  if (!f) return;
+  const st = statutInfo(f.statut);
+  const p = APP.patients.find(x => x.id === f.patientId);
+  const locked = f.statut === 'payee'; // une facture payée ne peut plus être modifiée
+
+  const body = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:var(--primary)">${esc(f.numero)}</div>
+        <div style="font-size:12.5px;color:var(--text-muted)">${new Date(f.dateHeure).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} à ${new Date(f.dateHeure).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <span class="badge ${st.badge}" style="font-size:12.5px;padding:5px 12px">${st.label}</span>
+    </div>
+
+    <div style="background:var(--green5);border-radius:10px;padding:12px 16px;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Patient</div>
+      <div style="font-weight:700;font-size:14.5px">${esc(p ? p.nom : '—')}</div>
+      ${p ? `<div style="font-size:12px;color:var(--text-muted)">${esc(p.num||'')} · ${esc(p.tel||'')}</div>` : ''}
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;color:var(--primary);margin-bottom:8px;font-size:13px"><i class="fa fa-list-check" style="margin-right:6px"></i>Prestations</div>
+      ${f.prestations.map(p => `
+        <div style="display:flex;justify-content:space-between;padding:7px 12px;background:#fafdfb;border:1px solid var(--green4);border-radius:7px;margin-bottom:5px;font-size:13px">
+          <span>${esc(p.libelle)}</span><span style="font-weight:600">${fmtMoney(p.montant)}</span>
+        </div>`).join('')}
+    </div>
+
+    <div style="background:var(--green5);border:1.5px solid var(--green4);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px">
+        <span>Montant total</span><span style="font-weight:700">${fmtMoney(f.montantTotal)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13.5px;color:#1d4ed8">
+        <span>Assurance ${f.assurance.actif ? `(${esc(f.assurance.nom)} · ${f.assurance.taux}%)` : ''}</span>
+        <span style="font-weight:700">${fmtMoney(f.montantAssurance)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1.5px dashed var(--green4);font-size:15px">
+        <span style="font-weight:700">À la charge du patient</span><span style="font-weight:800;color:var(--primary)">${fmtMoney(f.montantPatient)}</span>
+      </div>
+    </div>
+
+    ${f.statut === 'payee' ? `
+      <div style="background:#eafaf1;border:1px solid var(--success);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+        <div style="font-weight:700;color:var(--success);margin-bottom:4px"><i class="fa fa-circle-check" style="margin-right:6px"></i>Paiement encaissé intégralement</div>
+        <div>Mode : <strong>${esc(modePaiementInfo(f.modePaiement)?.label || f.modePaiement)}</strong>${f.reference ? ` · Réf : <strong>${esc(f.reference)}</strong>` : ''}</div>
+        <div style="color:var(--text-muted);margin-top:3px">Le ${new Date(f.encaisseLe).toLocaleString('fr-FR')} par ${esc(f.encaissePar)}</div>
+      </div>` : f.statut === 'partielle' ? `
+      <div style="background:#ebf5fb;border:1px solid #3498db;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px">
+        <div style="font-weight:700;color:#1d4ed8;margin-bottom:4px"><i class="fa fa-circle-half-stroke" style="margin-right:6px"></i>Paiement partiel enregistré</div>
+        <div>Déjà encaissé : <strong>${fmtMoney(f.montantEncaisseAcompte||0)}</strong> sur ${fmtMoney(f.montantPatient)}</div>
+        <div style="font-weight:700;color:var(--danger);margin-top:4px">Solde restant dû : ${fmtMoney(f.montantPatient - (f.montantEncaisseAcompte||0))}</div>
+      </div>` : ''}
+    ${f.statut !== 'payee' ? `
+      <div style="margin-bottom:16px">
+        <label style="font-weight:700;color:var(--primary);display:block;margin-bottom:8px;font-size:13px"><i class="fa fa-credit-card" style="margin-right:6px"></i>Encaisser maintenant</label>
+        <select class="form-control" id="detail_mode_paiement" onchange="toggleDetailRefField()">
+          <option value="">— Choisir un mode de paiement —</option>
+          ${MODES_PAIEMENT.map(m => `<option value="${m.value}">${esc(m.label)}</option>`).join('')}
+        </select>
+        <div id="detail_ref_field" style="display:none;margin-top:8px">
+          <input class="form-control sm" id="detail_reference" placeholder="Référence de transaction"/>
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="detail_partiel" onchange="document.getElementById('detail_montant_partiel_wrap').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--primary)"/>
+          <label for="detail_partiel" style="margin:0;font-size:12.5px;cursor:pointer">Paiement partiel (le patient ne règle pas la totalité aujourd'hui)</label>
+        </div>
+        <div id="detail_montant_partiel_wrap" style="display:none;margin-top:8px">
+          <label style="font-size:12px">Montant encaissé aujourd'hui (sur ${fmtMoney(f.montantPatient)} dû)</label>
+          <input class="form-control sm" id="detail_montant_partiel" type="number" min="1" max="${f.montantPatient}" placeholder="Montant en FCFA"/>
+        </div>
+      </div>` : ''}
+
+    <div style="border-top:1px solid var(--green4);padding-top:12px;margin-top:6px">
+      <div style="font-weight:700;color:var(--primary);margin-bottom:8px;font-size:12.5px"><i class="fa fa-clock-rotate-left" style="margin-right:6px"></i>Historique des opérations</div>
+      ${(f.historique||[]).slice().reverse().map(h => `
+        <div style="font-size:11.5px;color:var(--text-muted);padding:4px 0;display:flex;justify-content:space-between">
+          <span><i class="fa fa-circle" style="font-size:5px;margin-right:6px;color:var(--primary)"></i>${esc(h.action)} — ${esc(h.user)}</span>
+          <span>${new Date(h.ts).toLocaleString('fr-FR')}</span>
+        </div>`).join('')}
+    </div>`;
+
+  const footer = `
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+    ${(f.statut === 'payee' || f.statut === 'partielle') ? `<button class="btn btn-secondary" onclick="printRecu(${f.id})"><i class="fa fa-print"></i> Imprimer le reçu</button>` : ''}
+    ${f.statut === 'attente' ? `<button class="btn btn-danger" onclick="annulerFacture(${f.id})"><i class="fa fa-ban"></i> Annuler la facture</button>` : ''}
+    ${f.statut !== 'payee' && f.statut !== 'annulee' ? `<button class="btn btn-primary" onclick="encaisserFacture(${f.id})"><i class="fa fa-cash-register"></i> Encaisser le patient</button>` : ''}`;
+
+  openModal(`Facture ${f.numero}`, body, footer);
+}
+
+function toggleDetailRefField() {
+  const mode = document.getElementById('detail_mode_paiement').value;
+  const info = modePaiementInfo(mode);
+  document.getElementById('detail_ref_field').style.display = (info && info.needsRef) ? 'block' : 'none';
+}
+
+function encaisserFacture(id) {
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Seul l'agent d'accueil peut encaisser un paiement.", 'error');
+    return;
+  }
+  const f = APP.factures.find(x => x.id === id);
+  if (!f) return;
+  if (f.statut === 'payee') { showToast('Cette facture est déjà payée.', 'warning'); return; }
+  const mode = document.getElementById('detail_mode_paiement').value;
+  if (!mode) { showToast('Sélectionnez un mode de paiement.', 'warning'); return; }
+  const info = modePaiementInfo(mode);
+  const reference = document.getElementById('detail_reference')?.value.trim() || '';
+  if (info && info.needsRef && !reference) { showToast('Référence de transaction requise.', 'warning'); return; }
+
+  const isPartiel = document.getElementById('detail_partiel')?.checked;
+  const resteDu = f.montantPatient - (f.montantEncaisseAcompte || 0);
+
+  if (isPartiel) {
+    const montantSaisi = parseInt(document.getElementById('detail_montant_partiel')?.value) || 0;
+    if (montantSaisi <= 0) { showToast('Indiquez le montant encaissé aujourd\'hui.', 'warning'); return; }
+    if (montantSaisi >= resteDu) { showToast('Le montant saisi couvre la totalité du solde — utilisez un encaissement complet.', 'warning'); return; }
+
+    f.montantEncaisseAcompte = (f.montantEncaisseAcompte || 0) + montantSaisi;
+    f.modePaiement = mode;
+    f.reference = reference;
+    f.statut = 'partielle';
+    logFactureHistorique(f, `Paiement partiel encaissé — ${info.label} — ${fmtMoney(montantSaisi)}`);
+
+    closeModal();
+    showToast(`Paiement partiel encaissé — ${fmtMoney(montantSaisi)} (solde restant : ${fmtMoney(resteDu - montantSaisi)})`, 'success');
+    addNotification({ type:'facture', title:'Paiement partiel encaissé', desc:`${f.numero} — ${fmtMoney(montantSaisi)}`, time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), icon:'fa-circle-half-stroke', color:'#3498db' });
+    paintFacturation();
+    return;
+  }
+
+  f.modePaiement = mode;
+  f.reference = reference;
+  f.statut = 'payee';
+  f.encaisseLe = Date.now();
+  f.encaissePar = APP.currentUser.name;
+  logFactureHistorique(f, `Paiement encaissé (solde) — ${info.label}`);
+
+  closeModal();
+  showToast(`Paiement encaissé — ${f.numero}`, 'success');
+  addNotification({ type:'facture', title:'Paiement encaissé', desc:`${f.numero} — ${fmtMoney(f.montantTotal)}`, time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), icon:'fa-cash-register', color:'#27ae60' });
+  paintFacturation();
+}
+
+function annulerFacture(id) {
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Seul l'agent d'accueil peut annuler une facture.", 'error');
+    return;
+  }
+  const f = APP.factures.find(x => x.id === id);
+  if (!f) return;
+  if (f.statut === 'payee') { showToast('Une facture payée ne peut pas être annulée.', 'error'); return; }
+  if (f.statut === 'partielle') { showToast('Un acompte a déjà été encaissé sur cette facture, elle ne peut pas être annulée.', 'error'); return; }
+  openModal('Annuler la facture', `
+    <p>Confirmez-vous l'annulation de la facture <strong>${esc(f.numero)}</strong> ?</p>
+    <p style="color:var(--danger);font-size:13px"><i class="fa fa-triangle-exclamation" style="margin-right:6px"></i>Cette action est irréversible.</p>`,
+    `<button class="btn btn-secondary" data-bs-dismiss="modal">Retour</button>
+     <button class="btn btn-danger" onclick="confirmAnnulerFacture(${id})"><i class="fa fa-ban"></i> Confirmer l'annulation</button>`);
+}
+
+function confirmAnnulerFacture(id) {
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Action non autorisée pour ce rôle.", 'error');
+    return;
+  }
+  const f = APP.factures.find(x => x.id === id);
+  if (!f) return;
+  f.statut = 'annulee';
+  logFactureHistorique(f, 'Facture annulée');
+  closeModal();
+  showToast(`Facture ${f.numero} annulée.`, 'success');
+  paintFacturation();
+}
+
+/* ── Reçu imprimable ── */
+function printRecu(id) {
+  const f = APP.factures.find(x => x.id === id);
+  if (!f) return;
+  if (f.statut !== 'payee' && f.statut !== 'partielle') { showToast('Aucun encaissement à imprimer pour cette facture.', 'warning'); return; }
+  const p = APP.patients.find(x => x.id === f.patientId);
+  const info = modePaiementInfo(f.modePaiement);
+  const isPartiel = f.statut === 'partielle';
+  const montantEncaisse = isPartiel ? (f.montantEncaisseAcompte || 0) : f.montantPatient;
+  const solde = isPartiel ? (f.montantPatient - montantEncaisse) : 0;
+  const dernierEncaissement = (f.historique||[]).slice().reverse().find(h => h.action.toLowerCase().includes('encaiss'));
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Reçu ${f.numero}</title><style>
+    body{font-family:Arial,sans-serif;font-size:13px;padding:30px;color:#222}
+    .recu-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0d6b4f;padding-bottom:16px;margin-bottom:20px}
+    .recu-head h1{font-size:20px;color:#0d6b4f;margin:0 0 4px}
+    .recu-head p{margin:0;font-size:11.5px;color:#666}
+    .badge-paid{display:inline-block;background:#eafaf1;color:#27ae60;border:1.5px solid #27ae60;padding:4px 14px;border-radius:20px;font-weight:700;font-size:12px}
+    .badge-partial{display:inline-block;background:#ebf5fb;color:#1d4ed8;border:1.5px solid #3498db;padding:4px 14px;border-radius:20px;font-weight:700;font-size:12px}
+    table{width:100%;border-collapse:collapse;margin:16px 0;font-size:12.5px}
+    th,td{border:1px solid #ddd;padding:8px 12px;text-align:left}
+    th{background:#e3f5ed;color:#0d6b4f}
+    .totals{margin-top:16px;width:320px;margin-left:auto}
+    .totals div{display:flex;justify-content:space-between;padding:5px 0}
+    .totals .grand{font-weight:800;font-size:15px;border-top:2px solid #0d6b4f;padding-top:8px;color:#0d6b4f}
+    .totals .solde{font-weight:800;color:#c0392b}
+    .footer-note{margin-top:30px;font-size:11px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:12px}
+    @media print{body{padding:14px}}
+  </style></head><body>
+    <div class="recu-head">
+      <div>
+        <h1>LE TROPICAL — Centre de Santé</h1>
+        <p>${isPartiel ? 'Reçu d\'acompte' : 'Reçu de paiement officiel'}</p>
+      </div>
+      <span class="${isPartiel ? 'badge-partial' : 'badge-paid'}">${isPartiel ? 'PAIEMENT PARTIEL' : 'PAYÉE'}</span>
+    </div>
+
+    <p><strong>N° Facture :</strong> ${esc(f.numero)}<br/>
+    <strong>Date facturation :</strong> ${new Date(f.dateHeure).toLocaleString('fr-FR')}<br/>
+    <strong>Date encaissement :</strong> ${dernierEncaissement ? new Date(dernierEncaissement.ts).toLocaleString('fr-FR') : (f.encaisseLe ? new Date(f.encaisseLe).toLocaleString('fr-FR') : '—')}<br/>
+    <strong>Encaissé par :</strong> ${esc(f.encaissePar || APP.currentUser.name)}</p>
+
+    <p><strong>Patient :</strong> ${esc(p ? p.nom : '—')} ${p && p.num ? `(${esc(p.num)})` : ''}</p>
+
+    <table>
+      <thead><tr><th>Prestation</th><th style="text-align:right">Montant</th></tr></thead>
+      <tbody>
+        ${f.prestations.map(pr => `<tr><td>${esc(pr.libelle)}</td><td style="text-align:right">${fmtMoney(pr.montant)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div><span>Montant total</span><span>${fmtMoney(f.montantTotal)}</span></div>
+      ${f.assurance.actif ? `<div><span>Pris en charge (${esc(f.assurance.nom)} · ${f.assurance.taux}%)</span><span>- ${fmtMoney(f.montantAssurance)}</span></div>` : ''}
+      <div><span>À la charge du patient</span><span>${fmtMoney(f.montantPatient)}</span></div>
+      ${isPartiel ? `
+        <div class="grand"><span>Encaissé à ce jour</span><span>${fmtMoney(montantEncaisse)}</span></div>
+        <div class="solde"><span>Solde restant dû</span><span>${fmtMoney(solde)}</span></div>
+      ` : `<div class="grand"><span>Payé par le patient</span><span>${fmtMoney(f.montantPatient)}</span></div>`}
+    </div>
+
+    <p style="margin-top:20px"><strong>Mode de paiement :</strong> ${esc(info ? info.label : f.modePaiement)}${f.reference ? ` — Réf : ${esc(f.reference)}` : ''}</p>
+
+    <div class="footer-note">LE TROPICAL — Centre de Santé · Merci de votre confiance · Document généré le ${new Date().toLocaleString('fr-FR')}</div>
+    <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
 /* ═══════════════════════════════════
    PAGE: PARAMÈTRES (role-aware)
 ═══════════════════════════════════ */
@@ -2922,18 +3739,23 @@ function savePwdChange(oldId, newId, confId) {
 function renderQueue() {
   const role = APP.currentUser ? APP.currentUser.role : 'accueil';
   const area = document.getElementById('pageArea');
-  // For secretaire: filter by service
   const serviceId = role === 'secretaire' ? APP.currentUser.serviceId : null;
   const serviceName = serviceId ? (APP.services.find(s=>s.id===serviceId)?.nom||'') : null;
+
+  const subtitle = role === 'accueil'
+    ? "Accueillez les patients et orientez-les vers le service concerné"
+    : role === 'secretaire'
+      ? "Réceptionnez les patients orientés vers votre service et attribuez-les à un médecin"
+      : "Gestion des patients en attente";
 
   area.innerHTML = `
     <div class="page-header">
       <div>
         <h1 class="page-title">File d'attente${serviceName ? ' — ' + esc(serviceName) : ''}</h1>
-        <p class="page-subtitle">Gestion des patients en attente</p>
+        <p class="page-subtitle">${subtitle}</p>
       </div>
       <div class="page-actions">
-        <button class="btn btn-primary" onclick="addToQueue()"><i class="fa fa-user-plus"></i> Ajouter patient</button>
+        ${role === 'accueil' ? `<button class="btn btn-primary" onclick="addToQueue()"><i class="fa fa-user-plus"></i> Ajouter patient</button>` : ''}
       </div>
     </div>
     <div class="queue-board" id="queueBoard">
@@ -2941,22 +3763,93 @@ function renderQueue() {
     </div>`;
 }
 
+/* ── Colonnes affichées selon le rôle ──
+   Accueil   : Arrivée (à orienter) → Orienté (transmis aux secrétariats)
+   Secrétaire: Reçus pour mon service (à attribuer) → En consultation → Terminé
+*/
 function renderQueueColumns(role, serviceId) {
-  const activeServices = APP.services.filter(s=>s.actif);
+  if (role === 'accueil') {
+    const cols = [
+      { key:'attente', label:"Patients à l'accueil", icon:'fa-door-open', color:'#f39c12', items: APP.queue.attente },
+      { key:'oriente', label:"Orientés vers un service", icon:'fa-diagram-project', color:'#16a085', items: APP.queue.oriente },
+    ];
+    return cols.map(col => `
+      <div class="queue-column">
+        <div class="queue-column-title">
+          <i class="fa ${col.icon}" style="color:${col.color}"></i>
+          ${col.label}
+          <span class="badge badge-gray" style="margin-left:auto">${col.items.length}</span>
+        </div>
+        <div id="qcol-${col.key}">
+          ${col.items.length === 0 ? `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12.5px">Aucun patient</div>` : col.items.map(q => `
+            <div class="queue-card">
+              <div class="avatar">${patientName(q.patientId).charAt(0)}</div>
+              <div class="queue-card-info">
+                <div class="queue-card-name">${esc(patientName(q.patientId))}</div>
+                <div class="queue-card-time">${q.heure} — ${esc(q.motif)}</div>
+                ${q.service ? `<div style="font-size:11px;margin-top:2px"><span class="badge badge-green"><i class="fa fa-sitemap" style="margin-right:4px"></i>${esc(q.service)}</span></div>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto">
+                ${col.key==='attente'?`
+                  <button class="queue-move" onclick="orienterPatient(${q.id})" title="Orienter vers un service"><i class="fa fa-arrow-right"></i></button>
+                  <button class="queue-move" style="background:var(--info);color:#fff" onclick="msgPatientQueue(${q.patientId})" title="Envoyer un message"><i class="fa fa-envelope"></i></button>`:''}
+                ${col.key==='oriente'?`<span style="font-size:10.5px;color:var(--text-muted);text-align:center;padding:4px"><i class="fa fa-hourglass-half"></i><br/>En attente du secrétariat</span>`:''}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  if (role === 'secretaire') {
+    const orienteService = APP.queue.oriente.filter(q => q.serviceId === serviceId);
+    const encoursService = APP.queue.encours.filter(q => q.serviceId === serviceId);
+    const termineService = APP.queue.termine.filter(q => q.serviceId === serviceId);
+    const cols = [
+      { key:'oriente', label:"Reçus pour mon service", icon:'fa-inbox', color:'#16a085', items: orienteService },
+      { key:'encours', label:"En consultation", icon:'fa-stethoscope', color:'#3498db', items: encoursService },
+      { key:'termine', label:"Terminé", icon:'fa-check-circle', color:'#27ae60', items: termineService },
+    ];
+    return cols.map(col => `
+      <div class="queue-column">
+        <div class="queue-column-title">
+          <i class="fa ${col.icon}" style="color:${col.color}"></i>
+          ${col.label}
+          <span class="badge badge-gray" style="margin-left:auto">${col.items.length}</span>
+        </div>
+        <div id="qcol-${col.key}">
+          ${col.items.length === 0 ? `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:12.5px">Aucun patient</div>` : col.items.map(q => `
+            <div class="queue-card">
+              <div class="avatar">${patientName(q.patientId).charAt(0)}</div>
+              <div class="queue-card-info">
+                <div class="queue-card-name">${esc(patientName(q.patientId))}</div>
+                <div class="queue-card-time">${q.heure} — ${esc(q.motif)}</div>
+                ${q.medecin ? `<div style="font-size:11px;margin-top:2px;color:var(--text-muted)"><i class="fa fa-user-doctor"></i> ${esc(q.medecin)}</div>` : ''}
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto">
+                ${col.key==='oriente'?`<button class="queue-move" onclick="openModalNewRdv(${q.patientId}, ${q.id})" title="Prendre rendez-vous"><i class="fa fa-calendar-plus"></i></button>`:''}
+                ${col.key==='encours'?`<button class="queue-move" onclick="moveQueue(${q.id},'encours','termine')" title="Marquer terminé"><i class="fa fa-check"></i></button>`:''}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  // Fallback (autres rôles éventuels) : vue globale simple
   const cols = [
-    { key:'attente', label:"En attente", icon:'fa-clock', color:'#f39c12', count: APP.queue.attente.length },
-    { key:'encours', label:"En consultation", icon:'fa-stethoscope', color:'#3498db', count: APP.queue.encours.length },
-    { key:'termine', label:"Terminé", icon:'fa-check-circle', color:'#27ae60', count: APP.queue.termine.length }
+    { key:'attente', label:"En attente", icon:'fa-clock', color:'#f39c12', items: APP.queue.attente },
+    { key:'oriente', label:"Orientés", icon:'fa-diagram-project', color:'#16a085', items: APP.queue.oriente },
+    { key:'encours', label:"En consultation", icon:'fa-stethoscope', color:'#3498db', items: APP.queue.encours },
+    { key:'termine', label:"Terminé", icon:'fa-check-circle', color:'#27ae60', items: APP.queue.termine }
   ];
   return cols.map(col => `
     <div class="queue-column">
       <div class="queue-column-title">
         <i class="fa ${col.icon}" style="color:${col.color}"></i>
         ${col.label}
-        <span class="badge badge-gray" style="margin-left:auto">${col.count}</span>
+        <span class="badge badge-gray" style="margin-left:auto">${col.items.length}</span>
       </div>
       <div id="qcol-${col.key}">
-        ${APP.queue[col.key].map(q => `
+        ${col.items.map(q => `
           <div class="queue-card">
             <div class="avatar">${patientName(q.patientId).charAt(0)}</div>
             <div class="queue-card-info">
@@ -2964,12 +3857,6 @@ function renderQueueColumns(role, serviceId) {
               <div class="queue-card-time">${q.heure} — ${esc(q.motif)}</div>
               ${q.service ? `<div style="font-size:11px;margin-top:2px"><span class="badge badge-green">${esc(q.service)}</span></div>` : ''}
               ${q.medecin ? `<div style="font-size:11px;margin-top:2px;color:var(--text-muted)"><i class="fa fa-user-doctor"></i> ${esc(q.medecin)}</div>` : ''}
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto">
-              ${col.key==='attente'?`
-                <button class="queue-move" onclick="orienterPatient(${q.id})" title="Orienter vers un service"><i class="fa fa-arrow-right"></i></button>
-                <button class="queue-move" style="background:var(--info);color:#fff" onclick="msgPatientQueue(${q.patientId})" title="Envoyer un message"><i class="fa fa-envelope"></i></button>`:''}
-              ${col.key==='encours'?`<button class="queue-move" onclick="moveQueue(${q.id},'encours','termine')" title="Marquer terminé"><i class="fa fa-check"></i></button>`:''}
             </div>
           </div>`).join('')}
       </div>
@@ -2985,64 +3872,101 @@ function moveQueue(id, from, to) {
   showToast('Patient déplacé.', 'success');
 }
 
+/* ── ÉTAPE 1 — Agent d'accueil : orienter un patient vers un SERVICE (pas de médecin) ── */
 function orienterPatient(queueId) {
-  const role = APP.currentUser.role;
-  const serviceId = APP.currentUser.serviceId;
-  // Accueil orients to any service; secretaire only to their service's doctors
-  let serviceOptions = '';
-  if (role === 'accueil') {
-    serviceOptions = APP.services.filter(s=>s.actif).map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('');
-  } else {
-    serviceOptions = APP.services.filter(s=>s.id===serviceId).map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('');
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Seul l'agent d'accueil peut orienter un patient vers un service.", 'error');
+    return;
   }
-  openModal("Orienter le patient", `
+  const serviceOptions = APP.services.filter(s=>s.actif).map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('');
+  openModal("Orienter le patient vers un service", `
+    <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px">
+      <i class="fa fa-circle-info" style="margin-right:5px"></i>
+      Le patient sera transmis au secrétariat du service choisi. C'est la secrétaire de ce service qui lui attribuera ensuite un médecin.
+    </p>
     <div class="form-group"><label>Service *</label>
-      <select class="form-control" id="ori_service" onchange="updateMedecinsByService(this.value,'ori_med')">${serviceOptions}</select>
-    </div>
-    <div class="form-group"><label>Médecin</label>
-      <select class="form-control" id="ori_med">
-        ${APP.medecins.filter(m=>role==='accueil'?true:m.serviceId===serviceId).map(m=>`<option value="${m.id}">${esc(m.nom)}</option>`).join('')}
+      <select class="form-control" id="ori_service">
+        <option value="">— Choisir un service —</option>
+        ${serviceOptions}
       </select>
     </div>`,
     `<button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-     <button class="btn btn-primary" onclick="confirmerOrientation(${queueId})"><i class="fa fa-arrow-right"></i> Orienter</button>`);
+     <button class="btn btn-primary" onclick="confirmerOrientation(${queueId})"><i class="fa fa-arrow-right"></i> Orienter vers ce service</button>`);
 }
 
 function confirmerOrientation(queueId) {
-  const allItems = [...APP.queue.attente,...APP.queue.encours,...APP.queue.termine];
-  const item = allItems.find(x=>x.id===queueId);
-  if (!item) { closeModal(); return; }
-  const serviceId = parseInt(document.getElementById('ori_service').value);
-  const medecinId = parseInt(document.getElementById('ori_med').value);
-  const svc = APP.services.find(s=>s.id===serviceId);
-  const med = APP.medecins.find(m=>m.id===medecinId);
-  item.service = svc ? svc.nom : '';
-  item.medecin = med ? med.nom : '';
-  // Move to encours
   const idx = APP.queue.attente.findIndex(x=>x.id===queueId);
-  if (idx >= 0) {
-    APP.queue.attente.splice(idx,1);
-    APP.queue.encours.push(item);
-  }
+  if (idx === -1) { closeModal(); return; }
+  const serviceId = parseInt(document.getElementById('ori_service').value);
+  if (!serviceId) { showToast('Veuillez choisir un service.', 'warning'); return; }
+  const svc = APP.services.find(s=>s.id===serviceId);
+
+  const item = APP.queue.attente.splice(idx, 1)[0];
+  item.serviceId = serviceId;
+  item.service = svc ? svc.nom : '';
+  item.medecin = '';
+  APP.queue.oriente.push(item);
+
   closeModal();
-  showToast(`Patient orienté vers ${svc?svc.nom:'le service'}${med?' — '+med.nom:''}.`, 'success');
+  showToast(`Patient orienté vers le service ${svc ? svc.nom : ''}.`, 'success');
   document.getElementById('queueBoard').innerHTML = renderQueueColumns(APP.currentUser?.role, APP.currentUser?.serviceId);
 }
 
-function addToQueue() {
-  const role = APP.currentUser.role;
+/* ── ÉTAPE 2 — Secrétaire du service : attribuer un MÉDECIN au patient reçu ── */
+function attribuerMedecin(queueId) {
+  if (!APP.currentUser || APP.currentUser.role !== 'secretaire') {
+    showToast("Seule la secrétaire du service peut attribuer un médecin.", 'error');
+    return;
+  }
   const serviceId = APP.currentUser.serviceId;
-  const serviceSelect = role === 'accueil'
-    ? `<div class="form-group"><label>Service</label><select class="form-control" id="q_service">
-        <option value="">— Choisir un service —</option>
-        ${APP.services.filter(s=>s.actif).map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('')}
-       </select></div>`
-    : `<input type="hidden" id="q_service" value="${serviceId||''}"/>`;
+  const item = APP.queue.oriente.find(x => x.id === queueId);
+  if (!item || item.serviceId !== serviceId) {
+    showToast("Ce patient n'appartient pas à votre service.", 'error');
+    return;
+  }
+  const medecinsService = APP.medecins.filter(m => m.serviceId === serviceId && m.actif);
+  openModal("Attribuer un médecin", `
+    <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px">
+      <i class="fa fa-circle-info" style="margin-right:5px"></i>
+      Choisissez le médecin qui recevra ce patient. Vous pourrez ensuite lui créer un rendez-vous depuis la section Rendez-vous.
+    </p>
+    <div class="form-group"><label>Médecin *</label>
+      <select class="form-control" id="attr_med">
+        ${medecinsService.length === 0
+          ? `<option value="">Aucun médecin actif dans ce service</option>`
+          : medecinsService.map(m=>`<option value="${m.id}">${esc(m.nom)} — ${esc(m.specialite)}</option>`).join('')}
+      </select>
+    </div>`,
+    `<button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+     <button class="btn btn-primary" onclick="confirmerAttributionMedecin(${queueId})"><i class="fa fa-user-doctor"></i> Attribuer</button>`);
+}
 
+function confirmerAttributionMedecin(queueId) {
+  const idx = APP.queue.oriente.findIndex(x => x.id === queueId);
+  if (idx === -1) { closeModal(); return; }
+  const medecinId = parseInt(document.getElementById('attr_med').value);
+  if (!medecinId) { showToast('Veuillez choisir un médecin.', 'warning'); return; }
+  const med = APP.medecins.find(m => m.id === medecinId);
+
+  const item = APP.queue.oriente.splice(idx, 1)[0];
+  item.medecin = med ? med.nom : '';
+  item.medecinId = medecinId;
+  APP.queue.encours.push(item);
+
+  closeModal();
+  showToast(`Patient attribué à ${med ? med.nom : 'un médecin'}.`, 'success');
+  document.getElementById('queueBoard').innerHTML = renderQueueColumns(APP.currentUser?.role, APP.currentUser?.serviceId);
+}
+
+/* ── Ajout d'un patient en file par l'agent d'accueil (point d'entrée) ── */
+function addToQueue() {
+  if (!APP.currentUser || APP.currentUser.role !== 'accueil') {
+    showToast("Seul l'agent d'accueil peut ajouter un patient à la file.", 'error');
+    return;
+  }
   openModal("Ajouter à la file d'attente", `
     <div class="form-group"><label>Patient *</label><select class="form-control" id="q_pat">${APP.patients.map(p=>`<option value="${p.id}">${esc(p.nom)}</option>`).join('')}</select></div>
-    <div class="form-group"><label>Motif</label><input class="form-control" id="q_motif" placeholder="Motif de la visite"/></div>
-    ${serviceSelect}`,
+    <div class="form-group"><label>Motif</label><input class="form-control" id="q_motif" placeholder="Motif de la visite"/></div>`,
     `<button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
      <button class="btn btn-primary" onclick="saveAddToQueue()"><i class="fa fa-save"></i> Ajouter</button>`);
 }
@@ -3050,14 +3974,13 @@ function addToQueue() {
 function saveAddToQueue() {
   const patientId = parseInt(document.getElementById('q_pat').value);
   const motif = document.getElementById('q_motif').value.trim();
-  const serviceId = document.getElementById('q_service')?.value;
-  const svc = serviceId ? APP.services.find(s=>s.id===parseInt(serviceId)) : null;
   APP.queue.attente.push({
-    id: genId([...APP.queue.attente,...APP.queue.encours,...APP.queue.termine]),
+    id: genId([...APP.queue.attente,...APP.queue.oriente,...APP.queue.encours,...APP.queue.termine]),
     patientId,
     heure: new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
     motif: motif || 'Consultation',
-    service: svc ? svc.nom : '',
+    service: '',
+    serviceId: null,
     medecin: ''
   });
   closeModal(); showToast('Patient ajouté à la file.','success');
@@ -3107,7 +4030,7 @@ function renderConsultListe() {
                 <td>${esc(r.service)}</td>
                 <td>${esc(r.motif)}</td>
                 <td><span class="badge ${r.statut==='confirme'?'badge-green':'badge-orange'}">${r.statut==='confirme'?'Confirmé':'En attente'}</span></td>
-                <td><button class="btn btn-primary btn-sm" onclick="ouvrirConsultation(${r.id})"><i class="fa fa-stethoscope"></i> Consulter</button></td>
+                <td><button class="btn btn-primary btn-sm" onclick="ouvrirConsultation(${r.id})">${r.type==='teleconsult'?'<i class="fa fa-video"></i> Démarrer la téléconsultation':'<i class="fa fa-stethoscope"></i> Consulter'}</button></td>
               </tr>`).join('')}
           </tbody>
         </table>
@@ -3144,37 +4067,38 @@ function renderConsultOrdonnances() {
 }
 
 function renderTeleconsult() {
+  const rdvs = APP.rendezVous
+    .filter(r => r.medecinId === APP.currentUser.medecinId && r.type === 'teleconsult')
+    .sort((a,b)=>(a.date+a.heure).localeCompare(b.date+b.heure));
   return `
-    <div class="card" style="max-width:600px">
-      <div class="card-header"><span class="card-title">Démarrer une téléconsultation</span></div>
-      <div class="card-body">
-        <div class="form-group"><label>Patient *</label><select class="form-control" id="tc_patient">${APP.patients.map(p=>`<option value="${p.id}">${esc(p.nom)}</option>`).join('')}</select></div>
-        <div class="form-group"><label>Date et heure</label><input class="form-control" type="datetime-local" id="tc_datetime" value="${new Date().toISOString().slice(0,16)}"/></div>
-        <div class="form-group"><label>Notes préliminaires</label><textarea class="form-control" id="tc_notes" rows="3" placeholder="Motif, notes préparatoires…"></textarea></div>
-        <div style="display:flex;gap:12px;margin-top:8px">
-          <button class="btn btn-primary" onclick="lancerTeleconsult()"><i class="fa fa-video"></i> Démarrer la séance</button>
-          <button class="btn btn-secondary" onclick="planifierTeleconsult()"><i class="fa fa-calendar"></i> Planifier</button>
-        </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="fa fa-video" style="margin-right:8px;color:var(--primary)"></i>Mes téléconsultations</span>
+      </div>
+      <p style="font-size:12.5px;color:var(--text-muted);padding:0 16px;margin:10px 0 4px">
+        Cliquez sur un patient pour ouvrir sa fiche de consultation : vous pourrez y démarrer la session vidéo et rédiger l'ordonnance en même temps que la séance se déroule.
+      </p>
+      <div class="table-wrap">
+        <table class="trop-table">
+          <thead><tr><th>Patient</th><th>Date & Heure</th><th>Service</th><th>Motif</th><th>Statut</th><th>Session</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${rdvs.length===0?'<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Aucune téléconsultation programmée</td></tr>':
+              rdvs.map(r=>{
+                const session = APP.liveSessions.find(s => s.rdvId === r.id && s.statut === 'en_cours');
+                return `<tr>
+                  <td><div class="user-cell"><div class="avatar">${patientName(r.patientId).charAt(0)}</div><div class="user-cell-name">${esc(patientName(r.patientId))}</div></div></td>
+                  <td><b>${fmt(r.date)}</b> à ${r.heure}</td>
+                  <td>${esc(r.service)}</td>
+                  <td>${esc(r.motif)}</td>
+                  <td><span class="badge ${r.statut==='confirme'?'badge-green':'badge-orange'}">${r.statut==='confirme'?'Confirmé':'En attente'}</span></td>
+                  <td>${session ? `<span class="badge badge-blue"><i class="fa fa-circle" style="font-size:6px;margin-right:4px"></i>En direct${session.patientReady?' · Patient connecté':''}</span>` : '<span class="badge badge-gray">Non démarrée</span>'}</td>
+                  <td><button class="btn btn-primary btn-sm" onclick="ouvrirConsultation(${r.id})"><i class="fa fa-video"></i> ${session ? 'Reprendre la session' : 'Démarrer la session'}</button></td>
+                </tr>`;
+              }).join('')}
+          </tbody>
+        </table>
       </div>
     </div>`;
-}
-
-function lancerTeleconsult() {
-  const patientId = parseInt(document.getElementById('tc_patient').value);
-  const patient = APP.patients.find(p=>p.id===patientId);
-  // Grant patient access - add notification
-  addNotification({ type:'teleconsult', title:'Téléconsultation démarrée', desc:`Séance avec ${patient?patient.nom:'Patient'}`, time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), icon:'fa-video', color:'#3498db' });
-  showToast(`Téléconsultation démarrée. ${patient?patient.nom:''} a reçu l'accès.`, 'success');
-  openModal('Téléconsultation en cours', `
-    <div style="text-align:center;padding:32px">
-      <div style="width:80px;height:80px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;color:var(--primary)"><i class="fa fa-video"></i></div>
-      <h4>Séance avec ${esc(patient?patient.nom:'Patient')}</h4>
-      <p style="color:var(--text-muted)">La séance est en cours. Le patient a été notifié et a accès à la consultation.</p>
-      <div style="display:flex;gap:12px;justify-content:center;margin-top:20px">
-        <button class="btn btn-danger" onclick="closeModal();showToast('Séance terminée.','info')"><i class="fa fa-phone-slash"></i> Terminer</button>
-        <button class="btn btn-secondary" onclick="openModalNewOrdonnance()"><i class="fa fa-file-prescription"></i> Prescrire</button>
-      </div>
-    </div>`);
 }
 
 function planifierTeleconsult() { showToast('Téléconsultation planifiée. Patient notifié.','success'); }
@@ -3296,9 +4220,10 @@ function ouvrirConsultation(rdvId) {
   const r = APP.rendezVous.find(x => x.id === rdvId);
   if (!r) return;
   const p = APP.patients.find(x => x.id === r.patientId);
-  openModal(`Consultation — ${p ? p.nom : 'Patient'}`, `
-    <div class="consult-layout">
-      <!-- COLONNE GAUCHE : examen clinique -->
+  const isTele = r.type === 'teleconsult';
+  const session = isTele ? getOrCreateLiveSession(rdvId) : null;
+
+  const examenColumn = `
       <div>
         <h6 style="margin-bottom:12px;font-weight:700;color:var(--primary)"><i class="fa fa-stethoscope" style="margin-right:6px"></i>Examen clinique</h6>
         <div class="form-row">
@@ -3310,22 +4235,49 @@ function ouvrirConsultation(rdvId) {
           <div class="form-group"><label>Poids</label><input class="form-control sm" id="cl_poids" placeholder="70 kg"/></div>
         </div>
         <div class="form-group"><label>SpO₂</label><input class="form-control sm" id="cl_spo2" placeholder="98%"/></div>
-        <div class="form-group"><label>Observations cliniques</label><textarea class="form-control" id="cl_obs" rows="4" placeholder="Signes cliniques, antécédents pertinents…"></textarea></div>
+        <div class="form-group"><label>Observations cliniques</label><textarea class="form-control" id="cl_obs" rows="3" placeholder="Signes cliniques, antécédents pertinents…"></textarea></div>
         <div class="form-group"><label>Diagnostic</label><textarea class="form-control" id="cl_diag" rows="2" placeholder="Diagnostic principal…"></textarea></div>
         <div class="form-group"><label>Conduite à tenir</label><textarea class="form-control" id="cl_cat" rows="2" placeholder="Examens complémentaires, hospitalisation…"></textarea></div>
-      </div>
+      </div>`;
 
-      <!-- COLONNE DROITE : ordonnance + interactions -->
+  const videoColumn = `
+      <div>
+        <h6 style="margin-bottom:12px;font-weight:700;color:var(--primary)"><i class="fa fa-video" style="margin-right:6px"></i>Téléconsultation en direct</h6>
+        <div id="teleVideoZone" style="background:#0b1f17;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+          <video id="teleLocalVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:none"></video>
+          <div id="teleVideoPlaceholder" style="color:#9fd9c0;text-align:center;padding:20px">
+            <i class="fa fa-video-slash" style="font-size:30px;display:block;margin-bottom:8px;opacity:.6"></i>
+            <span style="font-size:12.5px">Caméra non démarrée</span>
+          </div>
+          <div id="telePatientBadge" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;display:none">
+            <i class="fa fa-circle" style="color:#2ecc8a;font-size:7px;margin-right:5px"></i>Patient connecté
+          </div>
+        </div>
+        <div id="teleStatusBox" style="background:var(--green5);border:1px solid var(--green4);border-radius:9px;padding:10px 12px;font-size:12.5px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" id="btnStartSession" style="flex:1" onclick="demarrerSessionTele(${rdvId})">
+            <i class="fa fa-phone"></i> Démarrer la session
+          </button>
+          <button class="btn btn-danger" id="btnEndSession" style="display:none" onclick="terminerSessionTele(${rdvId})">
+            <i class="fa fa-phone-slash"></i> Terminer
+          </button>
+        </div>
+        <div style="margin-top:10px" id="teleLinkBox"></div>
+      </div>`;
+
+  openModal(`Consultation — ${p ? p.nom : 'Patient'}${isTele ? ' <span class="badge badge-blue" style="margin-left:8px;vertical-align:middle"><i class=\"fa fa-video\"></i> Téléconsultation</span>' : ''}`, `
+    <div class="consult-layout" style="grid-template-columns:${isTele ? '1fr 1fr 1.1fr' : '1fr 1.1fr'}">
+      ${isTele ? videoColumn : ''}
+      ${examenColumn}
+
+      <!-- COLONNE ORDONNANCE (toujours visible, y compris pendant la vidéo) -->
       <div class="prescription-area">
         <h6 style="margin-bottom:4px;font-weight:700;color:var(--primary)">
           <i class="fa fa-file-prescription" style="margin-right:6px"></i>Ordonnance
         </h6>
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Les interactions médicamenteuses sont analysées automatiquement.</p>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Les interactions médicamenteuses sont analysées automatiquement. L'ordonnance sera transmise au compte du patient dès l'enregistrement.</p>
 
-        <!-- Zone alertes globales -->
         <div id="interactionSummary" style="margin-bottom:10px"></div>
-
-        <!-- Lignes de prescription -->
         <div id="prescLines"></div>
 
         <button class="btn btn-secondary btn-sm" id="btnAddMed" onclick="addPrescLine()" style="margin-bottom:12px;width:100%">
@@ -3342,10 +4294,106 @@ function ouvrirConsultation(rdvId) {
         </div>
       </div>
     </div>`,
-    `<button class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+    `<button class="btn btn-secondary" data-bs-dismiss="modal" onclick="stopTeleLocalStream()">Fermer</button>
      <button class="btn btn-secondary" onclick="saveConsultationPrint(${rdvId})"><i class="fa fa-print"></i> Imprimer</button>
      <button class="btn btn-primary" id="btnSaveConsult" onclick="saveConsultation(${rdvId})"><i class="fa fa-save"></i> Terminer consultation</button>`);
   addPrescLine();
+
+  if (isTele) {
+    refreshTeleStatusBox(rdvId);
+  }
+}
+
+/* ── Gestion des sessions de téléconsultation en direct (interne à l'app, sans outil tiers) ── */
+function getOrCreateLiveSession(rdvId) {
+  let session = APP.liveSessions.find(s => s.rdvId === rdvId && s.statut !== 'terminee');
+  if (!session) {
+    session = { id: APP._liveSessionSeq++, rdvId, statut: 'attente_patient', medecinReady: false, patientReady: false, startedAt: null };
+    APP.liveSessions.push(session);
+  }
+  return session;
+}
+
+function refreshTeleStatusBox(rdvId) {
+  const session = getOrCreateLiveSession(rdvId);
+  const box = document.getElementById('teleStatusBox');
+  const startBtn = document.getElementById('btnStartSession');
+  const endBtn = document.getElementById('btnEndSession');
+  const patientBadge = document.getElementById('telePatientBadge');
+  if (!box) return;
+
+  if (session.statut === 'attente_patient') {
+    box.innerHTML = `<i class="fa fa-circle" style="color:#bbb;font-size:8px;margin-right:6px"></i>Session non démarrée. Cliquez sur « Démarrer la session » pour activer votre caméra et inviter le patient.`;
+  } else if (session.statut === 'en_cours' && !session.patientReady) {
+    box.innerHTML = `<i class="fa fa-circle" style="color:#f39c12;font-size:8px;margin-right:6px"></i>Session active — en attente que le patient rejoigne depuis son compte.`;
+  } else if (session.statut === 'en_cours' && session.patientReady) {
+    box.innerHTML = `<i class="fa fa-circle" style="color:#27ae60;font-size:8px;margin-right:6px"></i><strong>Patient connecté.</strong> La téléconsultation est en cours.`;
+  }
+  if (startBtn) startBtn.style.display = session.statut === 'en_cours' ? 'none' : 'flex';
+  if (endBtn) endBtn.style.display = session.statut === 'en_cours' ? 'flex' : 'none';
+  if (patientBadge) patientBadge.style.display = session.patientReady ? 'block' : 'none';
+}
+
+let _teleLocalStream = null;
+
+async function demarrerSessionTele(rdvId) {
+  const session = getOrCreateLiveSession(rdvId);
+  session.statut = 'en_cours';
+  session.startedAt = Date.now();
+
+  // Activer la caméra du médecin (flux vidéo interne, pas d'outil externe)
+  try {
+    _teleLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const videoEl = document.getElementById('teleLocalVideo');
+    const placeholder = document.getElementById('teleVideoPlaceholder');
+    if (videoEl) { videoEl.srcObject = _teleLocalStream; videoEl.style.display = 'block'; }
+    if (placeholder) placeholder.style.display = 'none';
+  } catch (e) {
+    showToast("Caméra indisponible — la session démarre en mode audio/texte seulement.", 'warning');
+  }
+
+  // Notifier le patient avec un message interne contenant le lien de session
+  const r = APP.rendezVous.find(x => x.id === rdvId);
+  if (r) {
+    notifyPatientTeleconsultStart(r, session);
+  }
+
+  showToast('Session démarrée. Le patient peut désormais vous rejoindre.', 'success');
+  refreshTeleStatusBox(rdvId);
+
+  const linkBox = document.getElementById('teleLinkBox');
+  if (linkBox) {
+    linkBox.innerHTML = `<div style="font-size:11.5px;color:var(--text-muted);text-align:center"><i class="fa fa-bell" style="margin-right:4px"></i>Le patient a été notifié dans son espace « Mes Rendez-vous ».</div>`;
+  }
+}
+
+function notifyPatientTeleconsultStart(rdv, session) {
+  const toKey = 'patient-' + rdv.patientId;
+  const fromKey = myInboxKey ? myInboxKey() : ('medecin-' + APP.currentUser.medecinId);
+  if (!APP.inboxMessages) APP.inboxMessages = [];
+  APP.inboxMessages.push({
+    id: APP._inboxIdSeq ? APP._inboxIdSeq++ : (APP.inboxMessages.length + 1),
+    fromKey, fromName: APP.currentUser.name, fromRole: 'medecin', fromService: APP.currentUser.serviceId || null,
+    toKey, toName: patientName(rdv.patientId), toRole: 'patient',
+    subject: 'Votre téléconsultation a démarré',
+    body: `Dr ${APP.currentUser.name} a démarré la séance de téléconsultation prévue le ${fmt(rdv.date)} à ${rdv.heure}. Rendez-vous dans « Mes Rendez-vous » et cliquez sur « Rejoindre la téléconsultation ».`,
+    ts: Date.now(), read: false, deleted: false, deletedSent: false
+  });
+}
+
+function terminerSessionTele(rdvId) {
+  const session = APP.liveSessions.find(s => s.rdvId === rdvId && s.statut !== 'terminee');
+  if (session) session.statut = 'terminee';
+  stopTeleLocalStream();
+  showToast('Session de téléconsultation terminée.', 'info');
+  refreshTeleStatusBox(rdvId);
+}
+
+function stopTeleLocalStream() {
+  if (_teleLocalStream) {
+    _teleLocalStream.getTracks().forEach(t => t.stop());
+    _teleLocalStream = null;
+  }
 }
 
 function addPrescLine() {
@@ -3531,12 +4579,38 @@ function saveConsultation(rdvId) {
   });
   const libre = document.getElementById('prescLibre')?.value?.trim();
   if (libre) medicaments.push({ nom: libre, posologie:'', duree:'' });
-  if (medicaments.length) {
-    APP.ordonnances.push({ id:genId(APP.ordonnances), patientId:r.patientId, medecinId:APP.currentUser.medecinId, date:new Date().toISOString().split('T')[0], medicaments, notes:document.getElementById('prescNotes')?.value||'' });
+
+  if (medicaments.length && r) {
+    const ordonnance = { id:genId(APP.ordonnances), patientId:r.patientId, medecinId:APP.currentUser.medecinId, date:new Date().toISOString().split('T')[0], medicaments, notes:document.getElementById('prescNotes')?.value||'' };
+    APP.ordonnances.push(ordonnance);
+    // Transmettre directement l'ordonnance au compte du patient via la messagerie interne
+    notifyPatientNewOrdonnance(r, ordonnance);
   }
+
+  // Si une session de téléconsultation était active pour ce RDV, la clôturer proprement
+  const session = APP.liveSessions.find(s => s.rdvId === rdvId && s.statut !== 'terminee');
+  if (session) session.statut = 'terminee';
+  stopTeleLocalStream();
+
   closeModal();
-  showToast('Consultation enregistrée avec succès.', 'success');
+  showToast(medicaments.length ? 'Consultation enregistrée — ordonnance transmise au patient.' : 'Consultation enregistrée avec succès.', 'success');
   renderConsultation();
+}
+
+function notifyPatientNewOrdonnance(rdv, ordonnance) {
+  const toKey = 'patient-' + rdv.patientId;
+  const fromKey = typeof myInboxKey === 'function' ? myInboxKey() : ('medecin-' + APP.currentUser.medecinId);
+  if (!APP.inboxMessages) APP.inboxMessages = [];
+  const liste = ordonnance.medicaments.map(m => `• ${m.nom}${m.posologie ? ' — ' + m.posologie : ''}${m.duree ? ' (' + m.duree + ')' : ''}`).join('\n');
+  APP.inboxMessages.push({
+    id: APP._inboxIdSeq ? APP._inboxIdSeq++ : (APP.inboxMessages.length + 1),
+    fromKey, fromName: APP.currentUser.name, fromRole: 'medecin', fromService: APP.currentUser.serviceId || null,
+    toKey, toName: patientName(rdv.patientId), toRole: 'patient',
+    subject: 'Nouvelle ordonnance disponible',
+    body: `Dr ${APP.currentUser.name} vient de vous prescrire une nouvelle ordonnance (consultation du ${new Date().toLocaleDateString('fr-FR')}) :\n\n${liste}\n\nVous pouvez la consulter à tout moment dans « Mes Ordonnances ».`,
+    ts: Date.now(), read: false, deleted: false, deletedSent: false
+  });
+  addNotification({ type:'ordonnance', title:'Ordonnance transmise', desc:`${patientName(rdv.patientId)} — ${ordonnance.medicaments.length} médicament(s)`, time:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), icon:'fa-file-prescription', color:'#27ae60' });
 }
 
 function saveConsultationPrint(rdvId) {
@@ -3556,12 +4630,6 @@ function saveConsultationPrint(rdvId) {
     ${libre ? `<p><b>Autres :</b> ${esc(libre)}</p>` : ''}
     ${notes ? `<p><b>Notes :</b> ${esc(notes)}</p>` : ''}`);
 }
-
-// ── alias backward compat ──
-function checkDrugInteraction(select, lineId) {
-  // already defined above — this alias avoids the old call from addPrescLine
-}
-
 
 function openModalNewOrdonnance() {
   openModal('Nouvelle ordonnance', `
@@ -3699,6 +4767,8 @@ function dispenserOrd(id) {
 /* ═══════════════════════════════════
    PAGES PATIENT
 ═══════════════════════════════════ */
+let _mesRdvPollInterval = null;
+
 function renderMesRdv() {
   const area = document.getElementById('pageArea');
   const pid = APP.currentUser.patientId;
@@ -3715,20 +4785,87 @@ function renderMesRdv() {
       <div class="table-wrap">
         <table class="trop-table" id="tbl-mes-rdv">
           <thead><tr><th>Date & Heure</th><th>Type</th><th>Service</th><th>Motif</th><th>Statut</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${list.length===0?'<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">Aucun rendez-vous</td></tr>':
-              list.map(r=>`<tr>
-                <td><b>${fmt(r.date)}</b> à ${r.heure}</td>
-                <td>${r.type==='teleconsult'?'<span class="badge badge-blue"><i class="fa fa-video"></i> Téléconsultation</span>':'<span class="badge badge-green"><i class="fa fa-hospital"></i> Physique</span>'}</td>
-                <td>${esc(r.service)}</td>
-                <td>${esc(r.motif)}</td>
-                <td><span class="badge ${r.statut==='confirme'?'badge-green':r.statut==='en_attente'?'badge-orange':'badge-red'}">${r.statut==='confirme'?'Confirmé':r.statut==='en_attente'?'En attente':'Annulé'}</span></td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteRdv(${r.id})"><i class="fa fa-xmark"></i> Annuler</button></td>
-              </tr>`).join('')}
+          <tbody id="mesRdvTbody">
+            ${renderMesRdvRows(list)}
           </tbody>
         </table>
       </div>
     </div>`;
+
+  // Rafraîchit la liste toutes les 5s pour détecter le démarrage d'une session par le médecin
+  if (_mesRdvPollInterval) clearInterval(_mesRdvPollInterval);
+  _mesRdvPollInterval = setInterval(() => {
+    const tbody = document.getElementById('mesRdvTbody');
+    if (!tbody || !APP.currentUser || APP.currentUser.role !== 'patient') { clearInterval(_mesRdvPollInterval); return; }
+    const currentList = APP.rendezVous.filter(r=>r.patientId===APP.currentUser.patientId);
+    tbody.innerHTML = renderMesRdvRows(currentList);
+  }, 5000);
+}
+
+function renderMesRdvRows(list) {
+  if (list.length === 0) return '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">Aucun rendez-vous</td></tr>';
+  return list.map(r => {
+    const liveSession = r.type === 'teleconsult' ? APP.liveSessions.find(s => s.rdvId === r.id && s.statut === 'en_cours') : null;
+    return `<tr>
+      <td><b>${fmt(r.date)}</b> à ${r.heure}</td>
+      <td>${r.type==='teleconsult'?'<span class="badge badge-blue"><i class="fa fa-video"></i> Téléconsultation</span>':'<span class="badge badge-green"><i class="fa fa-hospital"></i> Physique</span>'}</td>
+      <td>${esc(r.service)}</td>
+      <td>${esc(r.motif)}</td>
+      <td><span class="badge ${r.statut==='confirme'?'badge-green':r.statut==='en_attente'?'badge-orange':'badge-red'}">${r.statut==='confirme'?'Confirmé':r.statut==='en_attente'?'En attente':'Annulé'}</span></td>
+      <td style="white-space:nowrap">
+        ${liveSession ? `<button class="btn btn-primary btn-sm" onclick="rejoindreTeleconsultPatient(${r.id})" style="animation:pulseGreen 1.6s infinite"><i class="fa fa-video"></i> Rejoindre la téléconsultation</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="deleteRdv(${r.id})" style="margin-left:4px"><i class="fa fa-xmark"></i> Annuler</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── Le patient rejoint la session de téléconsultation démarrée par le médecin ── */
+let _telePatientStream = null;
+
+async function rejoindreTeleconsultPatient(rdvId) {
+  const r = APP.rendezVous.find(x => x.id === rdvId);
+  const session = APP.liveSessions.find(s => s.rdvId === rdvId && s.statut === 'en_cours');
+  if (!r || !session) { showToast("La session n'est plus disponible.", 'error'); return; }
+  session.patientReady = true;
+
+  const med = APP.medecins.find(m => m.id === r.medecinId);
+
+  openModal(`Téléconsultation — ${med ? med.nom : 'Médecin'}`, `
+    <div style="background:#0b1f17;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+      <video id="telePatientVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;display:none"></video>
+      <div id="telePatientPlaceholder" style="color:#9fd9c0;text-align:center;padding:20px">
+        <i class="fa fa-video" style="font-size:30px;display:block;margin-bottom:8px;opacity:.7"></i>
+        <span style="font-size:12.5px">Connexion à la caméra…</span>
+      </div>
+      <div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px">
+        <i class="fa fa-circle" style="color:#2ecc8a;font-size:7px;margin-right:5px"></i>En direct avec ${med ? esc(med.nom) : 'votre médecin'}
+      </div>
+    </div>
+    <div style="background:var(--green5);border:1px solid var(--green4);border-radius:9px;padding:10px 12px;font-size:12.5px;text-align:center">
+      <i class="fa fa-circle-info" style="margin-right:5px;color:var(--primary)"></i>
+      Votre médecin a démarré la séance. Restez sur cette page jusqu'à la fin de la consultation.
+    </div>`,
+    `<button class="btn btn-danger" onclick="quitterTeleconsultPatient(${rdvId})"><i class="fa fa-phone-slash"></i> Quitter la session</button>`);
+
+  try {
+    _telePatientStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const videoEl = document.getElementById('telePatientVideo');
+    const placeholder = document.getElementById('telePatientPlaceholder');
+    if (videoEl) { videoEl.srcObject = _telePatientStream; videoEl.style.display = 'block'; }
+    if (placeholder) placeholder.style.display = 'none';
+  } catch (e) {
+    showToast("Caméra indisponible — vous pouvez tout de même échanger avec le médecin.", 'warning');
+  }
+}
+
+function quitterTeleconsultPatient(rdvId) {
+  if (_telePatientStream) { _telePatientStream.getTracks().forEach(t => t.stop()); _telePatientStream = null; }
+  const session = APP.liveSessions.find(s => s.rdvId === rdvId && s.statut === 'en_cours');
+  if (session) session.patientReady = false;
+  closeModal();
+  showToast('Vous avez quitté la session.', 'info');
+  renderMesRdv();
 }
 
 function openModalNewRdvPatient() {
