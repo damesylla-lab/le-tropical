@@ -81,7 +81,23 @@
             </button>
           </div>
         </div>
-        <input type="hidden" id="loginRole" value="admin"/>
+        <div class="field-group mb-2">
+          <label>Rôle</label>
+          <div class="field-wrap field-wrap-role">
+            <i class="fa fa-user-tag"></i>
+            <select id="loginRole">
+              <option value="admin">Administrateur</option>
+              <option value="accueil">Agent d'Accueil</option>
+              <option value="secretaire">Secrétaire</option>
+              <option value="medecin">Médecin</option>
+              <option value="pharmacien">Pharmacien</option>
+              <option value="patient">Patient</option>
+            </select>
+          </div>
+          <small style="display:block;margin-top:4px;font-size:11.5px;color:#888">
+            <i class="fa fa-circle-info" style="margin-right:4px"></i>Sélectionnez le rôle correspondant à votre compte, ou cliquez sur un compte démo ci-dessus.
+          </small>
+        </div>
 
         <button class="btn-login" onclick="doLogin()" type="button">
           <span>Se connecter</span>
@@ -90,7 +106,7 @@
 
         <p class="demo-hint" style="margin-top:14px">
           <i class="fa fa-info-circle"></i>
-          Cliquez sur un compte ci-dessus pour remplir automatiquement les champs.
+          Cliquez sur un compte ci-dessus pour remplir automatiquement les champs, ou choisissez votre rôle et saisissez vos identifiants.
         </p>
       </div>
     </div>
@@ -110,7 +126,7 @@
     <div class="sb-head">
       <div class="sb-brand">
         <div class="sb-leaf" style="background:#fff !important;border:none !important;padding:3px">
-          <img src="logo.png" alt="logo"
+          <img src=" logo.png" alt="logo"
                style="width:28px;height:28px;object-fit:contain;display:block"
                onerror="this.style.display='none';this.parentNode.innerHTML='<i class=\'fa-solid fa-leaf\' style=\'color:#0d6b4f;font-size:16px\'></i>'"/>
         </div>
