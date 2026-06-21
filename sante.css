@@ -126,7 +126,7 @@ html, body {
 }
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 520px;
   background: var(--surface);
   border-radius: 20px;
   box-shadow: var(--shadow-md);
@@ -1604,3 +1604,26 @@ table.trop-table {
 /* ── MESSAGERIE INBOX STYLE ── */
 #msgShell { font-size: 14px; }
 #folder-inbox, #folder-sent { user-select: none; }
+
+/* ── SELECT RÔLE avec icône Font Awesome ── */
+.field-wrap-role { position: relative; }
+.field-wrap-role i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+.field-wrap-role select {
+  padding-left: 38px !important;
+}
+
+/* ── TÉLÉCONSULTATION ── */
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46,204,138,.5); }
+  50% { box-shadow: 0 0 0 6px rgba(46,204,138,0); }
+}
+#teleVideoZone video, #telePatientVideo { transform: scaleX(-1); }
